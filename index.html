@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Login</title>
+    <style>
+        /* Add some basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input {
+            display: block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginButton">Login</button>
+
+    <h2>Status</h2>
+    <div id="status"></div>
+
+    <h2>Chat</h2>
+    <div id="chat"></div>
+
+    <input type="text" id="room" placeholder="Room Name">
+    <button id="joinRoomButton">Join Room</button>
+
+    <input type="text" id="message" placeholder="Message">
+    <button id="sendMessageButton">Send Message</button>
+
+    <h2>Search Image</h2>
+    <input type="text" id="searchTerm" placeholder="Search Term">
+    <button id="searchImageButton">Search Image</button>
+    <img id="imageResult" alt="Image Result" style="max-width: 300px;">
+
+    <script src="app.js"></script>
+</body>
+</html>
