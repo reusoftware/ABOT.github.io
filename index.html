@@ -2,49 +2,184 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Chat</title>
-    <script src="chat.js" defer></script>
+    <title>ABOT Login</title>
     <style>
-        #chatbox {
-            width: 100%;
-            height: 200px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
+        /* Add some basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
         }
-        #userList {
-            border: 1px solid #ccc;
-            height: 200px;
-            overflow-y: scroll;
-        }
-        #status {
-            font-weight: bold;
-            margin-top: 10px;
+        input {
+            display: block;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
-    <h2>WebSocket Chat</h2>
-    <div>
-        <label for="username">Username:</label>
-        <input type="text" id="username" required>
-        <label for="password">Password:</label>
-        <input type="password" id="password" required>
-        <button onclick="connect()">Connect</button>
-    </div>
-    <div>
-        <label for="room">Room:</label>
-        <input type="text" id="room" required>
-        <button onclick="joinRoom()">Join Room</button>
-    </div>
-    <div id="chatbox"></div>
-    <input type="text" id="message" placeholder="Type a message">
-    <button onclick="sendMessage()">Send</button>
-    <div>
-        <h3>Users in Chatroom:</h3>
-        <ul id="userList"></ul>
-    </div>
-    <div id="status">Disconnected</div>
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginButton">Login</button>
+
+    <h2>Status</h2>
+    <div id="status"></div>
+
+    <h2>Chat</h2>
+    <div id="chat"></div>
+
+    <input type="text" id="room" placeholder="Room Name">
+    <button id="joinRoomButton">Join Room</button>
+
+    <input type="text" id="message" placeholder="Message">
+    <button id="sendMessageButton">Send Message</button>
+
+    <h2>Search Image</h2>
+    <input type="text" id="searchTerm" placeholder="Search Term">
+    <button id="searchImageButton">Search Image</button>
+    <img id="imageResult" alt="Image Result" style="max-width: 300px;">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let socket;
+            let isConnected = false;
+            let packetIdNum = 0;
+
+            const loginButton = document.getElementById('loginButton');
+            const joinRoomButton = document.getElementById('joinRoomButton');
+            const sendMessageButton = document.getElementById('sendMessageButton');
+            const searchImageButton = document.getElementById('searchImageButton');
+            const statusDiv = document.getElementById('status');
+            const chatDiv = document.getElementById('chat');
+
+            loginButton.addEventListener('click', async () => {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                await connectWebSocket(username, password);
+            });
+
+            joinRoomButton.addEventListener('click', async () => {
+                const room = document.getElementById('room').value;
+                await joinRoom(room);
+            });
+
+            sendMessageButton.addEventListener('click', async () => {
+                const message = document.getElementById('message').value;
+                await sendMessage(message);
+            });
+
+            searchImageButton.addEventListener('click', async () => {
+                const searchTerm = document.getElementById('searchTerm').value;
+                await searchImage(searchTerm);
+            });
+
+            async function connectWebSocket(username, password) {
+                socket = new WebSocket('wss://chatp.net:5333/server');
+
+                socket.onopen = async () => {
+                    isConnected = true;
+                    statusDiv.textContent = 'Connected to server';
+
+                    // Login
+                    const loginMessage = {
+                        username: username,
+                        password: password,
+                        handler: 'login',
+                        id: generatePacketID()
+                    };
+                    await sendMessageToSocket(loginMessage);
+                };
+
+                socket.onmessage = (event) => {
+                    processReceivedMessage(event.data);
+                };
+
+                socket.onclose = () => {
+                    isConnected = false;
+                    statusDiv.textContent = 'Disconnected from server';
+                };
+
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+            }
+
+            async function joinRoom(roomName) {
+                if (isConnected) {
+                    const joinMessage = {
+                        handler: 'room_join',
+                        id: generatePacketID(),
+                        name: roomName
+                    };
+                    await sendMessageToSocket(joinMessage);
+                } else {
+                    statusDiv.textContent = 'Not connected to server';
+                }
+            }
+
+            async function sendMessage(message) {
+                if (isConnected) {
+                    const messageData = {
+                        handler: 'room_message',
+                        type: 'text',
+                        id: generatePacketID(),
+                        body: message,
+                        room: document.getElementById('room').value,
+                        url: '',
+                        length: '0'
+                    };
+                    await sendMessageToSocket(messageData);
+                } else {
+                    statusDiv.textContent = 'Not connected to server';
+                }
+            }
+
+            async function sendMessageToSocket(message) {
+                if (isConnected && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify(message));
+                } else {
+                    statusDiv.textContent = 'WebSocket is not open';
+                }
+            }
+
+            function generatePacketID() {
+                packetIdNum += 1;
+                return `R.U.BULAN©pinoy-2023®#${packetIdNum.toString().padStart(3, '0')}`;
+            }
+
+            function processReceivedMessage(message) {
+                console.log('Received:', message);
+                // Add your logic to handle incoming messages here
+                const data = JSON.parse(message);
+                if (data.handler === 'user_joined') {
+                    // Handle user joined event
+                    chatDiv.innerHTML += `<p>User ${data.username} joined the room.</p>`;
+                } else if (data.handler === 'user_left') {
+                    // Handle user left event
+                    chatDiv.innerHTML += `<p>User ${data.username} left the room.</p>`;
+                } else if (data.handler === 'room_message') {
+                    // Handle room message
+                    chatDiv.innerHTML += `<p><strong>${data.username}</strong>: ${data.body}</p>`;
+                }
+            }
+
+            async function searchImage(searchTerm) {
+                const apiKey = 'YOUR_API_KEY';
+                const cx = 'YOUR_CX';
+                const requestUrl = `https://www.googleapis.com/customsearch/v1?q=${searchTerm}&cx=${cx}&searchType=image&key=${apiKey}`;
+
+                try {
+                    const response = await fetch(requestUrl);
+                    const data = await response.json();
+
+                    if (data.items && data.items.length > 0) {
+                        const imageUrl = data.items[0].link;
+                        document.getElementById('imageResult').src = imageUrl;
+                    }
+                } catch (error) {
+                    console.error('Error searching image:', error);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
