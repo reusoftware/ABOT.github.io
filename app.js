@@ -13,12 +13,14 @@ function connect() {
         return;
     }
 
+    updateStatus('Connecting...');
+
     try {
         socket = new WebSocket('wss://chatp.net:5333/server');
 
         socket.onopen = function() {
             console.log('WebSocket is connected.');
-            document.getElementById('chatbox').innerHTML += '<p>Connected to server.</p>';
+            updateStatus('Connected');
             login(username, password);
         };
 
@@ -30,24 +32,24 @@ function connect() {
 
         socket.onerror = function(error) {
             console.error('WebSocket error:', error);
-            document.getElementById('chatbox').innerHTML += '<p style="color: red;">WebSocket error: ' + error.message + '</p>';
+            updateStatus('Error');
         };
 
         socket.onclose = function() {
             console.log('WebSocket is closed.');
-            document.getElementById('chatbox').innerHTML += '<p>WebSocket connection closed.</p>';
+            updateStatus('Disconnected');
         };
 
         setTimeout(() => {
             if (socket.readyState !== WebSocket.OPEN) {
                 console.error('WebSocket connection timed out.');
-                document.getElementById('chatbox').innerHTML += '<p style="color: red;">WebSocket connection timed out.</p>';
+                updateStatus('Connection timed out');
                 socket.close();
             }
         }, 5000);
     } catch (error) {
         console.error('Error in WebSocket connection:', error);
-        document.getElementById('chatbox').innerHTML += '<p style="color: red;">Error in WebSocket connection: ' + error.message + '</p>';
+        updateStatus('Connection error');
     }
 }
 
@@ -150,4 +152,8 @@ function sendGreeting(username, isWelcome) {
 
 function generatePacketID() {
     return 'R.U.BULAN©pinoy-2023®#' + Math.floor(Math.random() * 100000);
+}
+
+function updateStatus(status) {
+    document.getElementById('status').innerText = status;
 }
