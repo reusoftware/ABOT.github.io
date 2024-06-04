@@ -130,7 +130,7 @@ function handleUserPresence(message, isJoining) {
     } else {
         if (userList.has(username)) {
             userList.delete(username);
-            const listItem = document.querySelector(`#userList li:contains(${username})`);
+            const listItem = [...userListElement.children].find(li => li.textContent === username);
             if (listItem) {
                 userListElement.removeChild(listItem);
             }
