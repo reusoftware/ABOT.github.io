@@ -77,6 +77,9 @@ async function connectToWebSocket(username, password) {
     };
 }
 
+
+// Existing code...
+
 async function login(username, password) {
     if (!isConnected) {
         updateStatus('Not connected to the server.', 'error');
@@ -98,21 +101,32 @@ async function login(username, password) {
     }
 }
 
-function joinRoom() {
-    const room = document.getElementById('room').value;
-    if (!room) {
-        alert('Room name is required.');
+function joinRoom(roomName) {
+    if (!isConnected) {
+        updateStatus('Not connected to the server.', 'error');
         return;
     }
 
-    const joinMessage = {
-        handler: 'room_join',
-        id: generatePacketID(),
-        name: room
-    };
-    console.log('Sending join room message:', joinMessage);
-    socket.send(JSON.stringify(joinMessage));
+    const joinMessage = JSON.stringify({
+        handler: 'room_event',
+        type: 'join',
+        name: roomName,
+        id: generateUniqueId()
+    });
+
+    try {
+        socket.send(joinMessage);
+        updateStatus(`Request to join room: ${roomName} sent.`, 'info');
+    } catch (error) {
+        updateStatus('Error sending join room message.', 'error');
+        console.error('Error sending join room message:', error);
+    }
 }
+
+// Existing code...
+
+
+
 
 function sendMessage(message) {
     if (!isConnected || !currentRoom) {
