@@ -1,8 +1,9 @@
-let socket;
-let isConnected = false;
-let currentRoom = '';
-let users = new Set();
-let sendWelcomeMessages = false;
+document.addEventListener('DOMContentLoaded', () => {
+    let socket;
+    let isConnected = false;
+    let currentRoom = '';
+    let users = new Set();
+    let sendWelcomeMessages = false;
 
 document.getElementById('connectButton').addEventListener('click', async () => {
     const username = document.getElementById('username').value;
@@ -233,6 +234,7 @@ function updateStatus(message, type) {
     statusDiv.innerText = message;
     statusDiv.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
 }
+
 
 function generateUniqueId() {
     return '_' + Math.random().toString(36).substr(2, 9);
