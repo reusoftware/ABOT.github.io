@@ -34,14 +34,11 @@ document.getElementById('disconnectButton').addEventListener('click', () => {
     }
 });
 
-document.getElementById('joinRoomButton').addEventListener('click', () => {
-    const roomName = document.getElementById('roomName').value;
-    if (roomName) {
-        joinRoom(roomName);
-    } else {
-        updateStatus('Please enter a room name.', 'error');
-    }
-});
+   joinRoomButton.addEventListener('click', async () => {
+        const room = document.getElementById('room').value;
+        await joinRoom(room);
+    });
+
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
     const message = document.getElementById('messageInput').value;
