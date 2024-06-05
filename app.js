@@ -106,6 +106,8 @@ function processMessage(message) {
     const chatbox = document.getElementById('chatbox');
     const userListElement = document.getElementById('userList');
 
+    console.log('Processing message:', message);
+
     switch (message.handler) {
         case 'room_message':
             const fromUser = message.from;
@@ -138,6 +140,8 @@ function handleUserPresence(message, isJoining) {
     const username = message.username;
     const role = message.role;
 
+    console.log('Handling user presence:', username, isJoining ? 'joining' : 'leaving');
+
     if (isJoining) {
         if (!userList.has(username)) {
             userList.add(username);
@@ -165,8 +169,18 @@ function handleUserPresence(message, isJoining) {
 function sendGreeting(username, isWelcome) {
     const messages = isWelcome ? welcomeMessages : goodbyeMessages;
     const randomMessage = messages[Math.floor(Math.random() * messages.length)].replace("#", username);
-    document.getElementById('message').value = randomMessage;
-    sendMessage();
+    const room = document.getElementById('room').value;
+    const chatMessage = {
+        handler: 'room_message',
+        type: 'text',
+        id: generatePacketID(),
+        body: randomMessage,
+        room: room,
+        url: '',
+        length: '0'
+    };
+    console.log('Sending greeting message:', chatMessage);
+    socket.send(JSON.stringify(chatMessage));
 }
 
 function generatePacketID() {
