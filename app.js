@@ -102,9 +102,16 @@ async function login(username, password) {
 }
 
 function joinRoom(roomName) {
-    if (!isConnected) {
-        updateStatus('Not connected to the server.', 'error');
-        return;
+     if (isConnected) {
+            const joinMessage = {
+                handler: 'room_join',
+                id: generatePacketID(),
+                name: roomName
+            };
+            await sendMessageToSocket(joinMessage);
+        } else {
+            statusDiv.textContent = 'Not connected to server';
+        }
     }
 
     const joinMessage = JSON.stringify({
