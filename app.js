@@ -119,7 +119,6 @@ async function joinRoom(roomName) {
     }
 }
 
-
 function sendMessage(message) {
     if (!isConnected || !currentRoom) {
         updateStatus('Not connected to the server or no room joined.', 'error');
@@ -237,3 +236,4 @@ function updateStatus(message, type) {
 
 function generateUniqueId() {
     return '_' + Math.random().toString(36).substr(2, 9);
+}
