@@ -34,10 +34,10 @@ document.getElementById('disconnectButton').addEventListener('click', () => {
     }
 });
 
-document.getElementById('joinRoomButton').addEventListener('click', async () => {
-    const room = document.getElementById('room').value;
-    await joinRoom(room);
-});
+joinRoomButton.addEventListener('click', async () => {
+        const room = document.getElementById('room').value;
+        await joinRoom(room);
+    });
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
     const message = document.getElementById('messageInput').value;
