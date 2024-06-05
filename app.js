@@ -66,6 +66,11 @@ function login(username, password) {
 
 function joinRoom() {
     const room = document.getElementById('room').value;
+    if (!room) {
+        alert('Room name is required.');
+        return;
+    }
+
     const joinMessage = {
         handler: 'room_join',
         id: generatePacketID(),
@@ -78,6 +83,11 @@ function joinRoom() {
 function sendMessage() {
     const message = document.getElementById('message').value;
     const room = document.getElementById('room').value;
+    if (!message || !room) {
+        alert('Message and room are required.');
+        return;
+    }
+
     const chatMessage = {
         handler: 'room_message',
         type: 'text',
@@ -96,22 +106,29 @@ function processMessage(message) {
     const chatbox = document.getElementById('chatbox');
     const userListElement = document.getElementById('userList');
 
-    if (message.handler === 'room_message') {
-        const fromUser = message.from;
-        const body = message.body;
-        chatbox.innerHTML += `<p><strong>${fromUser}:</strong> ${body}</p>`;
-        chatbox.scrollTop = chatbox.scrollHeight;
-    } else if (message.handler === 'user_joined') {
-        handleUserPresence(message, true);
-    } else if (message.handler === 'user_left') {
-        handleUserPresence(message, false);
-    } else if (message.handler === 'login') {
-        if (message.success) {
-            chatbox.innerHTML += '<p>Login successful.</p>';
-        } else {
-            chatbox.innerHTML += '<p style="color: red;">Login failed: ' + message.error + '</p>';
-            socket.close();
-        }
+    switch (message.handler) {
+        case 'room_message':
+            const fromUser = message.from;
+            const body = message.body;
+            chatbox.innerHTML += `<p><strong>${fromUser}:</strong> ${body}</p>`;
+            chatbox.scrollTop = chatbox.scrollHeight;
+            break;
+        case 'user_joined':
+            handleUserPresence(message, true);
+            break;
+        case 'user_left':
+            handleUserPresence(message, false);
+            break;
+        case 'login':
+            if (message.success) {
+                chatbox.innerHTML += '<p>Login successful.</p>';
+            } else {
+                chatbox.innerHTML += `<p style="color: red;">Login failed: ${message.error}</p>`;
+                socket.close();
+            }
+            break;
+        default:
+            console.log('Unhandled message:', message);
     }
 }
 
