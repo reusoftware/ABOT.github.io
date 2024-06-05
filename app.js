@@ -101,33 +101,20 @@ async function login(username, password) {
     }
 }
 
-function joinRoom(roomName) {
-     if (isConnected) {
-            const joinMessage = {
-                handler: 'room_join',
-                id: generatePacketID(),
-                name: roomName
-            };
-            await sendMessageToSocket(joinMessage);
-        } else {
-            statusDiv.textContent = 'Not connected to server';
-        }
+function joinRoom() {
+    const room = document.getElementById('room').value;
+    if (!room) {
+        alert('Room name is required.');
+        return;
     }
 
-    const joinMessage = JSON.stringify({
-        handler: 'room_event',
-        type: 'join',
-        name: roomName,
-        id: generateUniqueId()
-    });
-
-    try {
-        socket.send(joinMessage);
-        updateStatus(`Request to join room: ${roomName} sent.`, 'info');
-    } catch (error) {
-        updateStatus('Error sending join room message.', 'error');
-        console.error('Error sending join room message:', error);
-    }
+    const joinMessage = {
+        handler: 'room_join',
+        id: generatePacketID(),
+        name: room
+    };
+    console.log('Sending join room message:', joinMessage);
+    socket.send(JSON.stringify(joinMessage));
 }
 
 function sendMessage(message) {
