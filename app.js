@@ -34,10 +34,10 @@ document.getElementById('disconnectButton').addEventListener('click', () => {
     }
 });
 
-joinRoomButton.addEventListener('click', async () => {
-        const room = document.getElementById('room').value;
-        await joinRoom(room);
-    });
+document.getElementById('joinRoomButton').addEventListener('click', async () => {
+    const roomName = document.getElementById('roomName').value;
+    await joinRoom(roomName);
+});
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
     const message = document.getElementById('messageInput').value;
@@ -97,20 +97,28 @@ async function login(username, password) {
     }
 }
 
- async function joinRoom(roomName) {
-        if (isConnected) {
-            const joinMessage = {
-                handler: 'room_join',
-                id: generatePacketID(),
-                name: roomName
-            };
-            await sendMessageToSocket(joinMessage);
-        } else {
-          updateStatus('Not connected to server','info');
-        }
+async function joinRoom(roomName) {
+    if (!isConnected) {
+        updateStatus('Not connected to the server.', 'error');
+        return;
     }
 
-// Rest of the code...
+    const joinMessage = JSON.stringify({
+        handler: 'room_event',
+        type: 'join',
+        name: roomName,
+        id: generateUniqueId()
+    });
+
+    try {
+        socket.send(joinMessage);
+        updateStatus(`Request to join room: ${roomName} sent.`, 'info');
+    } catch (error) {
+        updateStatus('Error sending join room message.', 'error');
+        console.error('Error sending join room message:', error);
+    }
+}
+
 
 function sendMessage(message) {
     if (!isConnected || !currentRoom) {
