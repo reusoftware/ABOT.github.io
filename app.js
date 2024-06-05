@@ -34,11 +34,10 @@ document.getElementById('disconnectButton').addEventListener('click', () => {
     }
 });
 
-   joinRoomButton.addEventListener('click', async () => {
-        const room = document.getElementById('room').value;
-        await joinRoom(room);
-    });
-
+document.getElementById('joinRoomButton').addEventListener('click', async () => {
+    const room = document.getElementById('roomName').value;
+    await joinRoom(room);
+});
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
     const message = document.getElementById('messageInput').value;
@@ -76,9 +75,6 @@ async function connectToWebSocket(username, password) {
         updateStatus('WebSocket connection closed.', 'info');
     };
 }
-
-
-// Existing code...
 
 async function login(username, password) {
     if (!isConnected) {
@@ -237,6 +233,7 @@ function updateUserList() {
     userListDiv.innerHTML = Array.from(users).join('<br>');
 }
 
+function updateStatus(message, type) {
 function updateStatus(message, type) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerText = message;
