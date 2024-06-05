@@ -1,241 +1,275 @@
 document.addEventListener('DOMContentLoaded', () => {
     let socket;
     let isConnected = false;
-    let currentRoom = '';
-    let users = new Set();
+    let packetIdNum = 0;
     let sendWelcomeMessages = false;
 
-document.getElementById('connectButton').addEventListener('click', async () => {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    if (!username || !password) {
-        updateStatus('Please enter both username and password.', 'error');
-        return;
-    }
-    
-    try {
-        updateStatus('Connecting...', 'info');
-        await connectToWebSocket(username, password);
-    } catch (error) {
-        updateStatus('Connection failed.', 'error');
-        console.error('Connection failed:', error);
-    }
-});
-
-document.getElementById('disconnectButton').addEventListener('click', () => {
-    if (socket && isConnected) {
-        socket.close();
-        isConnected = false;
-        document.getElementById('connectButton').disabled = false;
-        document.getElementById('disconnectButton').disabled = true;
-        document.getElementById('joinRoomButton').disabled = true;
-        document.getElementById('sendMessageButton').disabled = true;
-        updateStatus('Disconnected.', 'info');
-    }
-});
-
-document.getElementById('joinRoomButton').addEventListener('click', async () => {
-    const roomName = document.getElementById('roomName').value;
-    await joinRoom(roomName);
-});
-
-document.getElementById('sendMessageButton').addEventListener('click', () => {
-    const message = document.getElementById('messageInput').value;
-    if (message) {
-        sendMessage(message);
-        document.getElementById('messageInput').value = '';
-    }
-});
-
-document.getElementById('welcomeCheckbox').addEventListener('change', (event) => {
-    sendWelcomeMessages = event.target.checked;
-});
-
-async function connectToWebSocket(username, password) {
-    const url = 'wss://chatp.net:5333/server';
-    socket = new WebSocket(url);
-
-    socket.onopen = async () => {
-        isConnected = true;
-        updateStatus('Connected. Logging in...', 'info');
-        await login(username, password);
-    };
-
-    socket.onmessage = (event) => {
-        processReceivedMessage(event.data);
-    };
-
-    socket.onerror = (error) => {
-        updateStatus('WebSocket error.', 'error');
-        console.error('WebSocket error:', error);
-    };
-
-    socket.onclose = () => {
-        isConnected = false;
-        updateStatus('WebSocket connection closed.', 'info');
-    };
-}
-
-async function login(username, password) {
-    if (!isConnected) {
-        updateStatus('Not connected to the server.', 'error');
-        return;
-    }
-
-    const authMessage = JSON.stringify({
-        username: username,
-        password: password,
-        handler: 'login',
-        id: generateUniqueId()
-    });
-
-    try {
-        socket.send(authMessage);
-    } catch (error) {
-        updateStatus('Error sending login message.', 'error');
-        console.error('Error sending login message:', error);
-    }
-}
-
-async function joinRoom(roomName) {
-    if (!isConnected) {
-        updateStatus('Not connected to the server.', 'error');
-        return;
-    }
-
-    const joinMessage = JSON.stringify({
-        handler: 'room_event',
-        type: 'join',
-        name: roomName,
-        id: generateUniqueId()
-    });
-
-    try {
-        socket.send(joinMessage);
-        updateStatus(`Request to join room: ${roomName} sent.`, 'info');
-    } catch (error) {
-        updateStatus('Error sending join room message.', 'error');
-        console.error('Error sending join room message:', error);
-    }
-}
-
-function sendMessage(message) {
-    if (!isConnected || !currentRoom) {
-        updateStatus('Not connected to the server or no room joined.', 'error');
-        return;
-    }
-
-    const chatMessage = JSON.stringify({
-        handler: 'chat_message',
-        type: 'text',
-        room: currentRoom,
-        message: message,
-        id: generateUniqueId()
-    });
-
-    try {
-        socket.send(chatMessage);
-    } catch (error) {
-        updateStatus('Error sending chat message.', 'error');
-        console.error('Error sending chat message:', error);
-    }
-}
-
-function processReceivedMessage(message) {
-    try {
-        const messageObj = JSON.parse(message);
-        const handler = messageObj.handler;
-
-        switch (handler) {
-            case 'login_event':
-                handleLoginEvent(messageObj);
-                break;
-            case 'room_event':
-                handleRoomEvent(messageObj);
-                break;
-            case 'chat_message':
-                displayChatMessage(messageObj);
-                break;
-            case 'presence':
-                updateUserPresence(messageObj);
-                break;
-            default:
-                console.warn('Unknown handler:', handler);
-        }
-    } catch (error) {
-        updateStatus('Error processing received message.', 'error');
-        console.error('Error processing received message:', error);
-    }
-}
-
-function handleLoginEvent(messageObj) {
-    const type = messageObj.type;
-    if (type === 'success') {
-        updateStatus('Login successful.', 'success');
-        document.getElementById('connectButton').disabled = true;
-        document.getElementById('disconnectButton').disabled = false;
-        document.getElementById('joinRoomButton').disabled = false;
-    } else if (type === 'failed') {
-        updateStatus('Login failed: ' + messageObj.reason, 'error');
-    }
-}
-
-function handleRoomEvent(messageObj) {
-    const type = messageObj.type;
-    const userName = messageObj.name;
-
-    if (type === 'you_joined') {
-        currentRoom = messageObj.name;
-        updateStatus('You joined the room: ' + currentRoom, 'success');
-        document.getElementById('sendMessageButton').disabled = false;
-    } else if (type === 'user_joined') {
-        users.add(userName);
-        if (sendWelcomeMessages) {
-            sendMessage(`Welcome ${userName} to the room!`);
-        }
-        updateUserList();
-        displayChatMessage({ sender: 'System', message: `${userName} joined the room.` });
-    } else if (type === 'user_left') {
-        users.delete(userName);
-        if (sendWelcomeMessages) {
-            sendMessage(`Goodbye ${userName}!`);
-        }
-        updateUserList();
-        displayChatMessage({ sender: 'System', message: `${userName} left the room.` });
-    }
-}
-
-function displayChatMessage(messageObj) {
-    const chatbox = document.getElementById('chatbox');
-    chatbox.innerText += `${messageObj.sender}: ${messageObj.message}\n`;
-}
-
-function updateUserPresence(messageObj) {
-    const userName = messageObj.name;
-    const isOnline = messageObj.is_online;
-
-    if (isOnline) {
-        users.add(userName);
-    } else {
-        users.delete(userName);
-    }
-
-    updateUserList();
-}
-
-function updateUserList() {
-    const userListDiv = document.getElementById('userList');
-    userListDiv.innerHTML = Array.from(users).join('<br>');
-}
-
-function updateStatus(message, type) {
+    const loginButton = document.getElementById('loginButton');
+    const joinRoomButton = document.getElementById('joinRoomButton');
+    const sendMessageButton = document.getElementById('sendMessageButton');
+    const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
-    statusDiv.innerText = message;
-    statusDiv.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
-}
+    const chatDiv = document.getElementById('chat');
+    const welcomeCheckbox = document.getElementById('welcomeCheckbox');
 
+    loginButton.addEventListener('click', async () => {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        await connectWebSocket(username, password);
+    });
 
-function generateUniqueId() {
-    return '_' + Math.random().toString(36).substr(2, 9);
-}
+    joinRoomButton.addEventListener('click', async () => {
+        const room = document.getElementById('room').value;
+        await joinRoom(room);
+    });
+
+    sendMessageButton.addEventListener('click', async () => {
+        const message = document.getElementById('message').value;
+        await sendMessage(message);
+    });
+
+    searchImageButton.addEventListener('click', async () => {
+        const searchTerm = document.getElementById('searchTerm').value;
+        await searchImage(searchTerm);
+    });
+
+    welcomeCheckbox.addEventListener('change', () => {
+        sendWelcomeMessages = welcomeCheckbox.checked;
+    });
+
+    async function connectWebSocket(username, password) {
+        socket = new WebSocket('wss://chatp.net:5333/server');
+
+        socket.onopen = async () => {
+            isConnected = true;
+            statusDiv.textContent = 'Connected to server';
+
+            const loginMessage = {
+                username: username,
+                password: password,
+                handler: 'login',
+                id: generatePacketID()
+            };
+            await sendMessageToSocket(loginMessage);
+        };
+
+        socket.onmessage = (event) => {
+            processReceivedMessage(event.data);
+        };
+
+        socket.onclose = () => {
+            isConnected = false;
+            statusDiv.textContent = 'Disconnected from server';
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    async function joinRoom(roomName) {
+        if (isConnected) {
+            const joinMessage = {
+                handler: 'room_join',
+                id: generatePacketID(),
+                name: roomName
+            };
+            await sendMessageToSocket(joinMessage);
+        } else {
+            statusDiv.textContent = 'Not connected to server';
+        }
+    }
+
+    async function sendMessage(message) {
+        if (isConnected) {
+            const messageData = {
+                handler: 'room_message',
+                type: 'text',
+                id: generatePacketID(),
+                body: message,
+                room: document.getElementById('room').value,
+                url: '',
+                length: '0'
+            };
+            await sendMessageToSocket(messageData);
+        } else {
+            statusDiv.textContent = 'Not connected to server';
+        }
+    }
+
+    async function sendMessageToSocket(message) {
+        if (isConnected && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(message));
+        } else {
+            statusDiv.textContent = 'WebSocket is not open';
+        }
+    }
+
+    function generatePacketID() {
+        packetIdNum += 1;
+        return `R.U.BULAN©pinoy-2023®#${packetIdNum.toString().padStart(3, '0')}`;
+    }
+
+    function processReceivedMessage(message) {
+        try {
+            const jsonDict = JSON.parse(message);
+
+            if (jsonDict) {
+                const objectValue = jsonDict.handler;
+
+                if (objectValue === 'login_event') {
+                    handleLoginEvent(jsonDict);
+                } else if (objectValue === 'room_event') {
+                    handleRoomEvent(jsonDict);
+                } else if (objectValue === 'chat_message') {
+                    handleChatMessage(jsonDict);
+                } else if (objectValue === 'presence') {
+                    onUserProfileUpdates(jsonDict);
+                } else if (objectValue === 'group_invite') {
+                    onMucInvitation(jsonDict.inviter, jsonDict.name, 'private');
+                } else if (objectValue === 'user_online' || objectValue === 'user_offline') {
+                    onUserPresence(jsonDict);
+                } else if (objectValue === 'muc_event') {
+                    handleMucEvent(jsonDict);
+                } else if (objectValue === 'last_activity') {
+                    onUserActivityResult(jsonDict);
+                } else if (objectValue === 'roster') {
+                    onRoster(jsonDict);
+                } else if (objectValue === 'friend_requests') {
+                    onFriendRequest(jsonDict);
+                } else if (objectValue === 'register_event') {
+                    handleRegisterEvent(jsonDict);
+                } else if (objectValue === 'profile_other') {
+                    onGetUserProfile(jsonDict);
+                } else if (objectValue === 'receipt_ack') {
+                    onChatMessageSent(jsonDict.id, parseInt(jsonDict.timestamp, 10));
+                }
+            }
+        } catch (ex) {
+            console.error('Error processing received message:', ex);
+        }
+    }
+
+    function handleLoginEvent(messageObj) {
+        const str2 = messageObj.type;
+        if (str2 === 'success') {
+            statusDiv.textContent = 'Login successful!';
+        } else if (str2 === 'failed') {
+            const reason = messageObj.reason;
+            statusDiv.textContent = `Login failed: ${reason}`;
+        }
+    }
+
+    function handleRoomEvent(messageObj) {
+        const type = messageObj.type;
+        const userName = messageObj.user || messageObj.name; // Assuming 'user' contains the user's name
+
+        if (type === 'you_joined') {
+            statusDiv.textContent = `You joined the room: ${messageObj.name}`;
+        } else if (type === 'user_joined') {
+            if (sendWelcomeMessages) {
+                sendMessage(`Welcome ${userName} to the room!`);
+            }
+            displayChatMessage({ sender: 'System', message: `${userName} joined the room.` });
+        } else if (type === 'user_left') {
+            if (sendWelcomeMessages) {
+                sendMessage(`Goodbye ${userName}!`);
+            }
+            displayChatMessage({ sender: 'System', message: `${userName} left the room.` });
+        }
+    }
+
+    function handleChatMessage(messageObj) {
+        if (messageObj.type !== 'state' && messageObj.type !== 'seen' && messageObj.type !== 'delivery') {
+            displayChatMessage({ sender: messageObj.sender, message: messageObj.body });
+        }
+    }
+
+    function handleMucEvent(messageObj) {
+        if (messageObj.type === 'room_create') {
+            if (messageObj.result === 'success') {
+                joinRoom(messageObj.name);
+            } else if (messageObj.result === 'room_exists') {
+                statusDiv.textContent = `Room ${messageObj.name} already exists.`;
+            } else if (messageObj.result === 'empty_balance') {
+                statusDiv.textContent = 'Cannot create room: empty balance.';
+            } else {
+                statusDiv.textContent = 'Error creating room.';
+            }
+        }
+    }
+
+    function displayChatMessage(messageObj) {
+        const chatbox = document.getElementById('chatbox');
+        chatbox.value += `${messageObj.sender}: ${messageObj.message}\n`;
+        chatbox.scrollTop = chatbox.scrollHeight; // Scroll to the bottom
+    }
+
+    async function searchImage(searchTerm) {
+        const apiKey = 'YOUR_API_KEY';
+        const cx = 'YOUR_CX';
+        const requestUrl = `https://www.googleapis.com/customsearch/v1?q=${searchTerm}&cx=${cx}&searchType=image&key=${apiKey}`;
+
+        try {
+            const response = await fetch(requestUrl);
+            const data = await response.json();
+
+            if (data.items && data.items.length > 0) {
+                const imageUrl = data.items[0].link;
+                document.getElementById('imageResult').src = imageUrl;
+            }
+        } catch (error) {
+            console.error('Error searching image:', error);
+        }
+    }
+
+    function onUserProfileUpdates(userStatus) {
+        // Handle user profile updates
+    }
+
+    function onMucInvitation(inviter, name, privacy) {
+        // Handle MUC (Multi-User Chat) invitation
+    }
+
+    function onUserPresence(userPresence) {
+        // Handle user presence changes
+    }
+
+    function onUserActivityResult(userActivity) {
+        // Handle user activity results
+    }
+
+    function onRoster(roster) {
+        // Handle roster updates
+    }
+
+    function onFriendRequest(roster) {
+        // Handle friend requests
+    }
+
+    function handleRegisterEvent(messageObj) {
+        const str2 = messageObj.type;
+        if (str2 === 'success') {
+            statusDiv.textContent = 'Registration successful!';
+        } else {
+            const reason = messageObj.reason;
+            if (reason === 'user_exists') {
+                statusDiv.textContent = 'User already exists.';
+            } else if (reason === 'error_non_latin_name') {
+                statusDiv.textContent = 'Non-Latin characters are not allowed.';
+            } else if (reason === 'limit_reached') {
+                statusDiv.textContent = 'User limit reached.';
+            } else {
+                statusDiv.textContent = 'Registration error.';
+            }
+        }
+    }
+
+    function onGetUserProfile(userProfile) {
+        // Handle getting user profile
+    }
+
+    function onChatMessageSent(id, timestamp) {
+        // Handle chat message sent acknowledgment
+    }
+});
