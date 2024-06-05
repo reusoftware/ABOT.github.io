@@ -9,16 +9,15 @@ document.getElementById('connectButton').addEventListener('click', async () => {
     const password = document.getElementById('password').value;
     
     if (!username || !password) {
-        alert('Please enter both username and password.');
+        updateStatus('Please enter both username and password.', 'error');
         return;
     }
     
     try {
+        updateStatus('Connecting...', 'info');
         await connectToWebSocket(username, password);
-        document.getElementById('connectButton').disabled = true;
-        document.getElementById('disconnectButton').disabled = false;
-        document.getElementById('joinRoomButton').disabled = false;
     } catch (error) {
+        updateStatus('Connection failed.', 'error');
         console.error('Connection failed:', error);
     }
 });
@@ -31,6 +30,7 @@ document.getElementById('disconnectButton').addEventListener('click', () => {
         document.getElementById('disconnectButton').disabled = true;
         document.getElementById('joinRoomButton').disabled = true;
         document.getElementById('sendMessageButton').disabled = true;
+        updateStatus('Disconnected.', 'info');
     }
 });
 
@@ -60,6 +60,7 @@ async function connectToWebSocket(username, password) {
 
     socket.onopen = async () => {
         isConnected = true;
+        updateStatus('Connected. Logging in...', 'info');
         await login(username, password);
     };
 
@@ -68,18 +69,19 @@ async function connectToWebSocket(username, password) {
     };
 
     socket.onerror = (error) => {
+        updateStatus('WebSocket error.', 'error');
         console.error('WebSocket error:', error);
     };
 
     socket.onclose = () => {
         isConnected = false;
-        console.log('WebSocket connection closed.');
+        updateStatus('WebSocket connection closed.', 'info');
     };
 }
 
 async function login(username, password) {
     if (!isConnected) {
-        console.error('Not connected to the server.');
+        updateStatus('Not connected to the server.', 'error');
         return;
     }
 
@@ -93,13 +95,14 @@ async function login(username, password) {
     try {
         socket.send(authMessage);
     } catch (error) {
+        updateStatus('Error sending login message.', 'error');
         console.error('Error sending login message:', error);
     }
 }
 
 function joinRoom(roomName) {
     if (!isConnected) {
-        console.error('Not connected to the server.');
+        updateStatus('Not connected to the server.', 'error');
         return;
     }
 
@@ -113,14 +116,16 @@ function joinRoom(roomName) {
     try {
         socket.send(joinMessage);
         currentRoom = roomName;
+        updateStatus(`Joining room: ${roomName}`, 'info');
     } catch (error) {
+        updateStatus('Error sending join room message.', 'error');
         console.error('Error sending join room message:', error);
     }
 }
 
 function sendMessage(message) {
     if (!isConnected || !currentRoom) {
-        console.error('Not connected to the server or no room joined.');
+        updateStatus('Not connected to the server or no room joined.', 'error');
         return;
     }
 
@@ -135,6 +140,7 @@ function sendMessage(message) {
     try {
         socket.send(chatMessage);
     } catch (error) {
+        updateStatus('Error sending chat message.', 'error');
         console.error('Error sending chat message:', error);
     }
 }
@@ -157,13 +163,11 @@ function processReceivedMessage(message) {
             case 'presence':
                 updateUserPresence(messageObj);
                 break;
-            // Add other cases as needed
             default:
                 console.warn('Unknown handler:', handler);
         }
-
-        document.getElementById('chatbox').innerText += message + '\n';
     } catch (error) {
+        updateStatus('Error processing received message.', 'error');
         console.error('Error processing received message:', error);
     }
 }
@@ -171,30 +175,35 @@ function processReceivedMessage(message) {
 function handleLoginEvent(messageObj) {
     const type = messageObj.type;
     if (type === 'success') {
-        console.log('Login successful');
+        updateStatus('Login successful.', 'success');
+        document.getElementById('connectButton').disabled = true;
+        document.getElementById('disconnectButton').disabled = false;
+        document.getElementById('joinRoomButton').disabled = false;
     } else if (type === 'failed') {
-        console.error('Login failed:', messageObj.reason);
+        updateStatus('Login failed: ' + messageObj.reason, 'error');
     }
 }
 
 function handleRoomEvent(messageObj) {
     const type = messageObj.type;
     const userName = messageObj.name;
-    
+
     if (type === 'you_joined') {
-        console.log('You joined the room:', currentRoom);
+        updateStatus('You joined the room: ' + currentRoom, 'success');
     } else if (type === 'user_joined') {
         users.add(userName);
         if (sendWelcomeMessages) {
             sendMessage(`Welcome ${userName} to the room!`);
         }
         updateUserList();
+        displayChatMessage({ sender: 'System', message: `${userName} joined the room.` });
     } else if (type === 'user_left') {
         users.delete(userName);
         if (sendWelcomeMessages) {
             sendMessage(`Goodbye ${userName}!`);
         }
         updateUserList();
+        displayChatMessage({ sender: 'System', message: `${userName} left the room.` });
     }
 }
 
@@ -219,6 +228,12 @@ function updateUserPresence(messageObj) {
 function updateUserList() {
     const userListDiv = document.getElementById('userList');
     userListDiv.innerHTML = Array.from(users).join('<br>');
+}
+
+function updateStatus(message, type) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.innerText = message;
+    statusDiv.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
 }
 
 function generateUniqueId() {
