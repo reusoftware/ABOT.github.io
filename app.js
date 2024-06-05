@@ -38,7 +38,8 @@ document.getElementById('joinRoomButton').addEventListener('click', () => {
     const roomName = document.getElementById('roomName').value;
     if (roomName) {
         joinRoom(roomName);
-        document.getElementById('sendMessageButton').disabled = false;
+    } else {
+        updateStatus('Please enter a room name.', 'error');
     }
 });
 
@@ -115,8 +116,7 @@ function joinRoom(roomName) {
 
     try {
         socket.send(joinMessage);
-        currentRoom = roomName;
-        updateStatus(`Joining room: ${roomName}`, 'info');
+        updateStatus(`Request to join room: ${roomName} sent.`, 'info');
     } catch (error) {
         updateStatus('Error sending join room message.', 'error');
         console.error('Error sending join room message:', error);
@@ -189,7 +189,9 @@ function handleRoomEvent(messageObj) {
     const userName = messageObj.name;
 
     if (type === 'you_joined') {
+        currentRoom = messageObj.name;
         updateStatus('You joined the room: ' + currentRoom, 'success');
+        document.getElementById('sendMessageButton').disabled = false;
     } else if (type === 'user_joined') {
         users.add(userName);
         if (sendWelcomeMessages) {
