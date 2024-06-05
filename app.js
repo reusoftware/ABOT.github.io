@@ -141,7 +141,9 @@ function handleUserPresence(message, isJoining) {
     if (isJoining) {
         if (!userList.has(username)) {
             userList.add(username);
-            userListElement.innerHTML += `<li>${username}</li>`;
+            const userItem = document.createElement('li');
+            userItem.textContent = username;
+            userListElement.appendChild(userItem);
         }
         chatbox.innerHTML += `<p style="color: green;">${username} joined the room as ${role}.</p>`;
         chatbox.scrollTop = chatbox.scrollHeight;
