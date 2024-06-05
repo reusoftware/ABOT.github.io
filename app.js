@@ -233,7 +233,7 @@ function updateUserList() {
     userListDiv.innerHTML = Array.from(users).join('<br>');
 }
 
-function updateStatus(message, type) {
+
 function updateStatus(message, type) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerText = message;
