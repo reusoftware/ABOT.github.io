@@ -106,7 +106,7 @@ async function login(username, password) {
             };
             await sendMessageToSocket(joinMessage);
         } else {
-          updateStatus( 'Not connected to server','info');
+          updateStatus('Not connected to server','info');
         }
     }
 
