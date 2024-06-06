@@ -144,7 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (handler === 'group_invite') {
                     onMucInvitation(jsonDict.inviter, jsonDict.name, 'private');
                 } else if (handler === 'user_online' || handler === 'user_offline') {
-                    onUserPresence(jsonDict);
+                    onUserPresence
+(jsonDict);
                 } else if (handler === 'muc_event') {
                     handleMucEvent(jsonDict);
                 } else if (handler === 'last_activity') {
