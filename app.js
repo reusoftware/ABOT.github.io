@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loginButton = document.getElementById('loginButton');
     const joinRoomButton = document.getElementById('joinRoomButton');
+    const leaveRoomButton = document.getElementById('leaveRoomButton'); // Added Leave Room button
     const sendMessageButton = document.getElementById('sendMessageButton');
     const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
@@ -13,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
     const userListDiv = document.getElementById('userList');
-    const debugBox = document.getElementById('debugBox'); // Debug box to display received messages
+    const debugBox = document.getElementById('debugBox');
 
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
@@ -24,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     joinRoomButton.addEventListener('click', async () => {
         const room = document.getElementById('room').value;
         await joinRoom(room);
+    });
+
+    leaveRoomButton.addEventListener('click', async () => { // Added event listener for Leave Room button
+        const room = document.getElementById('room').value;
+        await leaveRoom(room);
     });
 
     sendMessageButton.addEventListener('click', async () => {
@@ -62,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await sendMessageToSocket(loginMessage);
 
-            // Fetch public rooms
             await fetchPublicRooms();
         };
 
@@ -89,9 +94,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: roomName
             };
             await sendMessageToSocket(joinMessage);
-
-            // Fetch user list
             await fetchUserList(roomName);
+        } else {
+            statusDiv.textContent = 'Not connected to server';
+        }
+    }
+
+    async function leaveRoom(roomName) { // Added leave room function
+        if (isConnected) {
+            const leaveMessage = {
+                handler: 'room_leave',
+                id: generatePacketID(),
+                name: roomName
+            };
+            await sendMessageToSocket(leaveMessage);
+            statusDiv.textContent = `You left the room: ${roomName}`;
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
@@ -181,29 +198,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleRoomEvent(messageObj) {
         const type = messageObj.type;
-        const userName = messageObj.user || 'Unknown'; // Fallback to 'Unknown' if user is undefined
+        const userName = messageObj.user || 'Unknown';
 
         if (type === 'you_joined') {
-            sendMessage(`Welcome! I'm a welcome bot running on the web`);
-            statusDiv.textContent = `You joined the room: ${messageObj.name}`;
+            sendMessage(`**${userName}** joined the room.`);
         } else if (type === 'user_joined') {
-            if (sendWelcomeMessages) {
-                sendMessage(`Welcome to the room!`);
-            }
-            displayChatMessage({ sender: 'System', message: `${userName} joined the room.` });
+            sendMessage(`**${userName}** joined the room.`);
         } else if (type === 'user_left') {
-            displayChatMessage({ sender: 'System', message: `${userName} left the room.` });
-        }
-    }
-
-    function handleChatMessage(messageObj) {
-        if (messageObj.type !== 'state' && messageObj.type !== 'seen' && messageObj.type !== 'delivery') {
-            displayChatMessage({ sender: messageObj.sender, message: messageObj.body });
-        }
-    }
-
-    function handleMucEvent(messageObj) {
-        if (messageObj.type === 'room_create') {
+            sendMessage(`**${userName}** left the room.`);
+        } else if (type === 'room_create') {
             if (messageObj.result === 'success') {
                 joinRoom(messageObj.name);
             } else if (messageObj.result === 'room_exists') {
