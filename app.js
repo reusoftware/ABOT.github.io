@@ -98,6 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
             displayChatMessage({ sender: 'System', message: `**${currentUsername}** joined the room.` });
+            if (sendWelcomeMessages) {
+            const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
+            await sendMessage(welcomeMessage);
+        }
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
