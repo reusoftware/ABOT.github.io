@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleRoomEvent(messageObj) {
         const type = messageObj.type;
-        const userName = messageObj.user;
+        const userName = messageObj.user || 'Unknown'; // Fallback to 'Unknown' if user is undefined
 
         if (type === 'you_joined') {
             sendMessage(`Welcome! I'm a welcome bot running on the web`);
