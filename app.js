@@ -162,18 +162,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleRoomEvent(messageObj) {
         const type = messageObj.type;
-        const userName = messageObj.user || messageObj.name; // Assuming 'user' contains the user's name
+        const userName = messageObj.user; // Assuming 'user' contains the user's name
 
         if (type === 'you_joined') {
+           
+            sendMessage(`Welcome! im welcome bot running on web`);
+            }
             statusDiv.textContent = `You joined the room: ${messageObj.name}`;
         } else if (type === 'user_joined') {
             if (sendWelcomeMessages) {
-                sendMessage(`Welcome ${userName} to the room!`);
+                sendMessage(`Welcome to the room!`);
             }
             displayChatMessage({ sender: 'System', message: `${userName} joined the room.` });
         } else if (type === 'user_left') {
             if (sendWelcomeMessages) {
-                sendMessage(`Goodbye ${userName}!`);
+                sendMessage(`Goodbye!`);
             }
             displayChatMessage({ sender: 'System', message: `${userName} left the room.` });
         }
