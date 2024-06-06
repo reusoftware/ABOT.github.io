@@ -144,8 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (handler === 'group_invite') {
                     onMucInvitation(jsonDict.inviter, jsonDict.name, 'private');
                 } else if (handler === 'user_online' || handler === 'user_offline') {
-                    onUserPresence
-(jsonDict);
+                    onUserPresence(jsonDict);
                 } else if (handler === 'muc_event') {
                     handleMucEvent(jsonDict);
                 } else if (handler === 'last_activity') {
@@ -190,9 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             displayChatMessage({ sender: 'System', message: `${userName} joined the room.` });
         } else if (type === 'user_left') {
-            if (sendWelcomeMessages) {
-                sendMessage(`Goodbye!`);
-            }
             displayChatMessage({ sender: 'System', message: `${userName} left the room.` });
         }
     }
@@ -218,7 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayChatMessage(messageObj) {
-        chatbox.value += `${messageObj.sender}: ${messageObj.message}\n`;
+        const messageDiv = document.createElement('div');
+        messageDiv.textContent = `${messageObj.sender}: ${messageObj.message}`;
+        chatbox.appendChild(messageDiv);
         chatbox.scrollTop = chatbox.scrollHeight;
     }
 
@@ -298,17 +296,3 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusDiv.textContent = 'Non-Latin characters are not allowed.';
             } else if (reason === 'limit_reached') {
                 statusDiv.textContent = 'User limit reached.';
-            } else {
-                statusDiv.textContent = 'Registration error.';
-            }
-        }
-    }
-
-    function onGetUserProfile(profile) {
-        // Handle getting user profile
-    }
-
-    function onChatMessageSent(id, timestamp) {
-        // Handle message sent acknowledgment
-    }
-});
