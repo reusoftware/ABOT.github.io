@@ -3,10 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let isConnected = false;
     let packetIdNum = 0;
     let sendWelcomeMessages = false;
+    let currentUsername = '';
 
     const loginButton = document.getElementById('loginButton');
     const joinRoomButton = document.getElementById('joinRoomButton');
-    const leaveRoomButton = document.getElementById('leaveRoomButton'); // Added Leave Room button
+    const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
     const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
+        currentUsername = username;
         await connectWebSocket(username, password);
     });
 
@@ -27,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await joinRoom(room);
     });
 
-    leaveRoomButton.addEventListener('click', async () => { // Added event listener for Leave Room button
+    leaveRoomButton.addEventListener('click', async () => {
         const room = document.getElementById('room').value;
         await leaveRoom(room);
     });
@@ -95,12 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
+            displayChatMessage({ sender: 'System', message: `**${currentUsername}** joined the room.` });
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
     }
 
-    async function leaveRoom(roomName) { // Added leave room function
+    async function leaveRoom(roomName) {
         if (isConnected) {
             const leaveMessage = {
                 handler: 'room_leave',
@@ -108,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: roomName
             };
             await sendMessageToSocket(leaveMessage);
+            displayChatMessage({ sender: 'System', message: `**${currentUsername}** left the room.` });
             statusDiv.textContent = `You left the room: ${roomName}`;
         } else {
             statusDiv.textContent = 'Not connected to server';
@@ -145,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function processReceivedMessage(message) {
-        debugBox.value += `${message}\n`; // Add message to the debug box for inspection
+        debugBox.value += `${message}\n`;
 
         try {
             const jsonDict = JSON.parse(message);
@@ -158,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (handler === 'room_event') {
                     handleRoomEvent(jsonDict);
                 } else if (handler === 'chat_message') {
-                    handleChatMessage(jsonDict);
+                    displayChatMessage(jsonDict);
                 } else if (handler === 'presence') {
                     onUserProfileUpdates(jsonDict);
                 } else if (handler === 'group_invite') {
@@ -201,11 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const userName = messageObj.user || 'Unknown';
 
         if (type === 'you_joined') {
-            sendMessage(`**${userName}** joined the room.`);
+            displayChatMessage({ sender: 'System', message: `**You** joined the room.` });
         } else if (type === 'user_joined') {
-            sendMessage(`**${userName}** joined the room.`);
+            displayChatMessage({ sender: 'System', message: `**${userName}** joined the room.` });
         } else if (type === 'user_left') {
-            sendMessage(`**${userName}** left the room.`);
+            displayChatMessage({ sender: 'System', message: `**${userName}** left the room.` });
         } else if (type === 'room_create') {
             if (messageObj.result === 'success') {
                 joinRoom(messageObj.name);
