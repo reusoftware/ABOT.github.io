@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
     const userListDiv = document.getElementById('userList');
-    const debugBox = document.getElementById('debugBox'); // Add a debug box to display received messages
+    const debugBox = document.getElementById('debugBox'); // Debug box to display received messages
 
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
