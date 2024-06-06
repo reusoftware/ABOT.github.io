@@ -9,8 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessageButton = document.getElementById('sendMessageButton');
     const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
-    const chatDiv = document.getElementById('chat');
+    const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
+    const roomListbox = document.getElementById('roomListbox');
+    const userListDiv = document.getElementById('userList');
 
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
@@ -37,6 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
         sendWelcomeMessages = welcomeCheckbox.checked;
     });
 
+    roomListbox.addEventListener('change', async () => {
+        const selectedRoom = roomListbox.value;
+        if (selectedRoom) {
+            await joinRoom(selectedRoom);
+        }
+    });
+
     async function connectWebSocket(username, password) {
         socket = new WebSocket('wss://chatp.net:5333/server');
 
@@ -51,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: generatePacketID()
             };
             await sendMessageToSocket(loginMessage);
+
+            // Fetch public rooms
+            await fetchPublicRooms();
         };
 
         socket.onmessage = (event) => {
@@ -76,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: roomName
             };
             await sendMessageToSocket(joinMessage);
+
+            // Fetch user list
+            await fetchUserList(roomName);
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
@@ -202,27 +217,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayChatMessage(messageObj) {
-        const chatbox = document.getElementById('chatbox');
         chatbox.value += `${messageObj.sender}: ${messageObj.message}\n`;
         chatbox.scrollTop = chatbox.scrollHeight;
     }
 
-    async function searchImage(searchTerm) {
-        const apiKey = 'YOUR_API_KEY';
-        const cx = 'YOUR_CX';
-        const requestUrl = `https://www.googleapis.com/customsearch/v1?q=${searchTerm}&cx=${cx}&searchType=image&key=${apiKey}`;
-
-        try {
-            const response = await fetch(requestUrl);
-            const data = await response.json();
-
-            if (data.items && data.items.length > 0) {
-                const imageUrl = data.items[0].link;
-                document.getElementById('imageResult').src = imageUrl;
-            }
-        } catch (error) {
-            console.error('Error searching image:', error);
+    async function fetchPublicRooms() {
+        if (isConnected) {
+            const fetchRoomsMessage = {
+                handler: 'fetch_rooms',
+                id: generatePacketID()
+            };
+            await sendMessageToSocket(fetchRoomsMessage);
         }
+    }
+
+    async function fetchUserList(roomName) {
+        if (isConnected) {
+            const fetchUsersMessage = {
+                handler: 'fetch_users',
+                id: generatePacketID(),
+                room: roomName
+            };
+            await sendMessageToSocket(fetchUsersMessage);
+        }
+    }
+
+    function updateRoomList(rooms) {
+        roomListbox.innerHTML = '';
+        rooms.forEach(room => {
+            const option = document.createElement('option');
+            option.value = room;
+            option.textContent = room;
+            roomListbox.appendChild(option);
+        });
+    }
+
+    function updateUserList(users) {
+        userListDiv.innerHTML = '';
+        users.forEach(user => {
+            const userDiv = document.createElement('div');
+            userDiv.textContent = user;
+            userListDiv.appendChild(userDiv);
+        });
     }
 
     function onUserProfileUpdates(userStatus) {
