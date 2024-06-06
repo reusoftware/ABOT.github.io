@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
     const userListDiv = document.getElementById('userList');
+    const debugBox = document.getElementById('debugBox'); // Add a debug box to display received messages
 
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
@@ -127,6 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function processReceivedMessage(message) {
+        debugBox.value += `${message}\n`; // Add message to the debug box for inspection
+
         try {
             const jsonDict = JSON.parse(message);
 
@@ -296,3 +299,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusDiv.textContent = 'Non-Latin characters are not allowed.';
             } else if (reason === 'limit_reached') {
                 statusDiv.textContent = 'User limit reached.';
+            } else {
+                statusDiv.textContent = 'Registration error.';
+            }
+        }
+    }
+
+    function onGetUserProfile(profile) {
+        // Handle getting user profile
+    }
+
+    function onChatMessageSent(id, timestamp) {
+        // Handle message sent acknowledgment
+    }
+});
