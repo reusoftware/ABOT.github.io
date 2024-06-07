@@ -34,12 +34,12 @@
         
         <button id="joinRoomButton">Join Room</button>
        
-        <button id="leaveRoomButton">Leave Room</button> <!-- Added Leave Room button -->
+        <button id="leaveRoomButton">Leave Room</button>
       
         <select id="roomListbox"></select>
     </div>
 
-    <div id="chatbox"></div> <!-- Changed to a div for better message display -->
+    <div id="chatbox"></div>
 
     <div>
         <input type="text" id="message">
@@ -57,7 +57,10 @@
         <input type="checkbox" id="welcomeCheckbox">
     </div>
 
-    <div id="userList"></div>
+    <div>
+        <label for="userListbox">Current Users:</label>
+        <select id="userListbox" size="10" multiple></select>
+    </div>
 
     <div>
         <label for="debugBox">Debug Messages:</label>
