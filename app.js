@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessageButton = document.getElementById('sendMessageButton');
     const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
+ const statuscount = document.getElementById('count');
     const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
@@ -208,10 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = messageObj.type;
     const userName = messageObj.username || 'Unknown';
     const role = messageObj.role;
-
+const count = messageObj.current_count;
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-
+statuscount.textContent = 'count';
         // Display room subject
         displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
 
@@ -310,13 +311,17 @@ const actor = messageObj.actor;
     }
 }
 
-    function displayChatMessage(messageObj) {
+  function displayChatMessage(messageObj) {
         const { from, body } = messageObj;
         const newMessage = document.createElement('div');
         newMessage.textContent = `${from}: ${body}`;
         chatbox.appendChild(newMessage);
         chatbox.scrollTop = chatbox.scrollHeight;
+
+
+
     }
+
 
 
 async function kickUser(username) {
