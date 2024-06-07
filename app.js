@@ -99,9 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchUserList(roomName);
             displayChatMessage({ sender: 'System', message: `**${currentUsername}** joined the room.` });
             if (sendWelcomeMessages) {
-            const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
-            await sendMessage(welcomeMessage);
-        }
+                const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
+                await sendMessage(welcomeMessage);
+            }
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleRoomEvent(messageObj) {
+    async function handleRoomEvent(messageObj) {
         const type = messageObj.type;
         const userName = messageObj.user || 'Unknown';
 
@@ -212,13 +212,13 @@ document.addEventListener('DOMContentLoaded', () => {
             displayChatMessage({ sender: 'System', message: `**You** joined the room.` });
         } else if (type === 'user_joined') {
             displayChatMessage({ sender: 'System', message: `**${userName}** joined the room.` });
-            const welcomeMessage = `Hello `**${userName}**;
+            const welcomeMessage = `Hello **${userName}**!`;
             await sendMessage(welcomeMessage);
         } else if (type === 'user_left') {
             displayChatMessage({ sender: 'System', message: `**${userName}** left the room.` });
         } else if (type === 'room_create') {
             if (messageObj.result === 'success') {
-                joinRoom(messageObj.name);
+                await joinRoom(messageObj.name);
             } else if (messageObj.result === 'room_exists') {
                 statusDiv.textContent = `Room ${messageObj.name} already exists.`;
             } else if (messageObj.result === 'empty_balance') {
