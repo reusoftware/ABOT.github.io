@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleRoomEvent(messageObj) {
         const type = messageObj.type;
-        const userName = messageObj.user || 'Unknown';
+        const userName = messageObj.username || 'Unknown';
 
         if (type === 'you_joined') {
             displayChatMessage({ sender: 'System', message: `**You** joined the room.` });
