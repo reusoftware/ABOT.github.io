@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let packetIdNum = 0;
     let sendWelcomeMessages = false;
     let currentUsername = '';
+    let userList = [];
 
     const loginButton = document.getElementById('loginButton');
     const joinRoomButton = document.getElementById('joinRoomButton');
@@ -14,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
-    const userListDiv = document.getElementById('userList');
+    const userListbox = document.getElementById('userListbox');
     const debugBox = document.getElementById('debugBox');
 
     loginButton.addEventListener('click', async () => {
@@ -135,12 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await sendMessageToSocket(messageData);
 
-            // Check for special spin command
-            if (message.trim() === '.s') {
-                const responses = ["Good luck!", "Try again!", "Better luck next time!", "Jackpot!", "Spin again!"];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                await sendMessage(randomResponse);
-            }
+          
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
@@ -214,37 +210,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const role = messageObj.role;
 
         if (type === 'you_joined') {
-            displayChatMessage({ from: 'System', body: `**You** joined the room as ${role}` });
+            displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
 
             // Display room subject
-            displayChatMessage({ from: 'System', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
+            displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
 
             // Display list of users with roles
             messageObj.users.forEach(user => {
-                displayChatMessage({ from: 'System', body: `${user.username} - ${user.role}` });
+                displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
             });
+
+            // Update the user list
+            userList = messageObj.users;
+            updateUserListbox();
         } else if (type === 'user_joined') {
-            displayChatMessage({ from: 'System', body: `${userName} joined the room as ${role}` });
+            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
 
             if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello ${role} ${userName}, welcome back!`;
                 await sendMessage(welcomeMessage);
             }
+
+            // Add the new user to the user list
+            userList.push({ username: userName, role: role });
+            updateUserListbox();
         } else if (type === 'user_left') {
-            displayChatMessage({ from: 'System', body: `${userName} left the room.` });
+            displayChatMessage({ from: '', body: `${userName} left the room.` });
 
             if (sendWelcomeMessages) {
                 const goodbyeMessage = `Bye ${userName}!`;
                 await sendMessage(goodbyeMessage);
             }
+
+            // Remove the user from the user list
+            userList = userList.filter(user => user.username !== userName);
+            updateUserListbox();
         } else if (type === 'text') {
             const body = messageObj.body;
             const from = messageObj.from;
             displayChatMessage({ from, body });
 
-            if (body === '@bot') {
-                const welcomeMessage = `Hello ${from}, what can I help you with?`;
-                await sendMessage(welcomeMessage);
+            // Check for special spin command
+            if (body === '.s') {
+                const responses = ["Lets Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ ),kick,Lets Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )   ${from},${from}  you got ☔ Umbrella from me,you got a pair of shoe 👟👟   ${from}, Dress and Pants 👕 👖 for you ${from}, 💻 laptop for you ${from},great! ${from}  you can travel now ✈️,${from} you have an apple 🍎,kick,carrots for you 🥕 ${from},${from} you got an icecream 🍦,🍺 🍻 beer for you ${from},you wanna game with me 🏀 ${from},guitar 🎸 for you ${from},for you❤️ ${from}"
+    ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                await sendMessage(randomResponse);
             } else if (body === '+wc') {
                 welcomeCheckbox.checked = true;
                 sendWelcomeMessages = true;
@@ -253,6 +264,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 welcomeCheckbox.checked = false;
                 sendWelcomeMessages = false;
                 await sendMessage('Welcome messages deactivated.');
+            }
+        } else if (type === 'role_change') {
+            const oldRole = messageObj.old_role;
+            const newRole = messageObj.new_role;
+            displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole}` });
+
+            // Update the user's role in the user list
+            const user = userList.find(user => user.username === userName);
+            if (user) {
+                user.role = newRole;
+                updateUserListbox();
             }
         } else if (type === 'room_create') {
             if (messageObj.result === 'success') {
@@ -273,5 +295,20 @@ document.addEventListener('DOMContentLoaded', () => {
         newMessage.textContent = `${from}: ${body}`;
         chatbox.appendChild(newMessage);
         chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function updateUserListbox() {
+        userListbox.innerHTML = '';
+
+        const sortedUsers = userList.sort((a, b) => {
+            const roles = ['creator', 'owner', 'admin', 'member', 'none'];
+            return roles.indexOf(a.role) - roles.indexOf(b.role);
+        });
+
+        sortedUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.textContent = `${user.username} (${user.role})`;
+            userListbox.appendChild(option);
+        });
     }
 });
