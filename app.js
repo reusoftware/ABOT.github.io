@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'text') {
             const body = messageObj.body;
 const from = messageObj.from;
-           if (body) ==='@bot'{
+           if (body ==='@bot'){
 const welcomeMessage = `Hello ${from} what can i help you`;
                 await sendMessage(welcomeMessage);
            }
