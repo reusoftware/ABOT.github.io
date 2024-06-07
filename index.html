@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+    <title>ABOT Chat App</title>
+    <style>
+        #chatbox {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            resize: both;
+        }
+    </style>
 </head>
 <body>
     <div>
@@ -21,14 +31,15 @@
     <div>
         <label for="room">Room:</label>
         <input type="text" id="room">
+        
         <button id="joinRoomButton">Join Room</button>
+       
         <button id="leaveRoomButton">Leave Room</button> <!-- Added Leave Room button -->
+      
         <select id="roomListbox"></select>
     </div>
 
-    <div>
-        <textarea id="chatbox" rows="10" cols="30" readonly></textarea>
-    </div>
+    <div id="chatbox"></div> <!-- Changed to a div for better message display -->
 
     <div>
         <input type="text" id="message">
