@@ -212,6 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
             displayChatMessage({ sender: 'System', message: `**You** joined the room.` });
         } else if (type === 'user_joined') {
             displayChatMessage({ sender: 'System', message: `**${userName}** joined the room.` });
+            const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
+            await sendMessage(welcomeMessage);
         } else if (type === 'user_left') {
             displayChatMessage({ sender: 'System', message: `**${userName}** left the room.` });
         } else if (type === 'room_create') {
