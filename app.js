@@ -207,27 +207,48 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleRoomEvent(messageObj) {
         const type = messageObj.type;
         const userName = messageObj.username || 'Unknown';
+         const role = messageObj.role;
 //const body = messageObj.body;
 //const from = messageObj.from;
         
-        if (type === 'you_joined') {
-            displayChatMessage({ sender: 'System', message: `**You** joined the room.` });
+        if (type === 'you_joined') {           
+             const messageDiv = document.createElement('div');
+        messageDiv.textContent = ({  `**You** joined the room as ${role}` });
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+            
         } else if (type === 'text') {
             const body = messageObj.body;
 const from = messageObj.from;
+      const messageDiv = document.createElement('div');
+        messageDiv.textContent = ({`${from} :  ${body}` });
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+
+            
            if (body ==='@bot'){
 const welcomeMessage = `Hello ${from} what can i help you`;
                 await sendMessage(welcomeMessage);
            }
         } else if (type === 'user_joined') {
             const role = messageObj.role;
-            displayChatMessage({  `${userName} joined the room as ${role}` });
+     
+      const messageDiv = document.createElement('div');
+        messageDiv.textContent = ({  `${userName} joined the room as ${role}` });
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+            
             if (sendWelcomeMessages) {
-                const welcomeMessage = `Hello ${userName} WelcomeBack!`;
+                const welcomeMessage = `Hello ${role} ${userName} WelcomeBack!`;
                 await sendMessage(welcomeMessage);
             }
         } else if (type === 'user_left') {
-            displayChatMessage({ sender: 'System', message: `**${userName}** left the room.` });
+         const messageDiv = document.createElement('div');
+        messageDiv.textContent = ({  `${userName} leave the room.` });
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
         if (sendWelcomeMessages) {
                 const welcomeMessage = `Bye ${userName} !`;
                 await sendMessage(welcomeMessage);
