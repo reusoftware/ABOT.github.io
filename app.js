@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function connectWebSocket(username, password) {
+        statusDiv.textContent = 'Connecting to server...';
         socket = new WebSocket('wss://chatp.net:5333/server');
 
         socket.onopen = async () => {
@@ -68,12 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 handler: 'login',
                 id: generatePacketID()
             };
+            console.log('Sending login message:', loginMessage);
             await sendMessageToSocket(loginMessage);
-
-            await fetchPublicRooms();
         };
 
         socket.onmessage = (event) => {
+            console.log('Received message:', event.data);
             processReceivedMessage(event.data);
         };
 
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
-            displayChatMessage({ sender: 'System', message: `**${currentUsername}** joined the room.` });
+
             if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
                 await sendMessage(welcomeMessage);
@@ -115,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: roomName
             };
             await sendMessageToSocket(leaveMessage);
-            displayChatMessage({ sender: 'System', message: `**${currentUsername}** left the room.` });
             statusDiv.textContent = `You left the room: ${roomName}`;
         } else {
             statusDiv.textContent = 'Not connected to server';
@@ -141,9 +141,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendMessageToSocket(message) {
         if (isConnected && socket.readyState === WebSocket.OPEN) {
+            console.log('Sending message to socket:', message);
             socket.send(JSON.stringify(message));
         } else {
             statusDiv.textContent = 'WebSocket is not open';
+            console.error('WebSocket is not open');
         }
     }
 
@@ -153,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function processReceivedMessage(message) {
+        console.log('Received message:', message);
         debugBox.value += `${message}\n`;
 
         try {
@@ -185,8 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     handleRegisterEvent(jsonDict);
                 } else if (handler === 'profile_other') {
                     onGetUserProfile(jsonDict);
-                } else if (handler === 'receipt_ack') {
-                    onChatMessageSent(jsonDict.id, parseInt(jsonDict.timestamp, 10));
+                } else if (handler === 'followers_event') {
+                    onFollowersList(jsonDict);
+                } else if (handler === 'add_buddy') {
+                    onAddBuddy(jsonDict);
+                } else {
+                    console.log('Unknown handler:', handler);
                 }
             }
         } catch (ex) {
@@ -194,66 +201,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleLoginEvent(messageObj) {
-        const status = messageObj.type;
-        if (status === 'success') {
-            statusDiv.textContent = 'Login successful!';
-        } else if (status === 'failed') {
-            const reason = messageObj.reason;
-            statusDiv.textContent = `Login failed: ${reason}`;
-        }
-    }
-
     async function handleRoomEvent(messageObj) {
         const type = messageObj.type;
         const userName = messageObj.username || 'Unknown';
-         const role = messageObj.role;
-//const body = messageObj.body;
-//const from = messageObj.from;
-        
-        if (type === 'you_joined') {           
-             const messageDiv = document.createElement('div');
-        messageDiv.textContent = ({  `**You** joined the room as ${role}` });
-        chatbox.appendChild(messageDiv);
-        chatbox.scrollTop = chatbox.scrollHeight;
-            
-        } else if (type === 'text') {
-            const body = messageObj.body;
-const from = messageObj.from;
-      const messageDiv = document.createElement('div');
-        messageDiv.textContent = ({`${from} :  ${body}` });
-        chatbox.appendChild(messageDiv);
-        chatbox.scrollTop = chatbox.scrollHeight;
+        const role = messageObj.role;
 
-
-            
-           if (body ==='@bot'){
-const welcomeMessage = `Hello ${from} what can i help you`;
-                await sendMessage(welcomeMessage);
-           }
+        if (type === 'you_joined') {
+ const role = messageObj.role;
+            displayChatMessage({ from: 'System', body: `**You** joined the room as ${role}` });
         } else if (type === 'user_joined') {
-            const role = messageObj.role;
-     
-      const messageDiv = document.createElement('div');
-        messageDiv.textContent = ({  `${userName} joined the room as ${role}` });
-        chatbox.appendChild(messageDiv);
-        chatbox.scrollTop = chatbox.scrollHeight;
+            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
 
-            
             if (sendWelcomeMessages) {
-                const welcomeMessage = `Hello ${role} ${userName} WelcomeBack!`;
+                const welcomeMessage = `Hello ${role} ${userName}, welcome back!`;
                 await sendMessage(welcomeMessage);
             }
         } else if (type === 'user_left') {
-         const messageDiv = document.createElement('div');
-        messageDiv.textContent = ({  `${userName} leave the room.` });
-        chatbox.appendChild(messageDiv);
-        chatbox.scrollTop = chatbox.scrollHeight;
-        if (sendWelcomeMessages) {
-                const welcomeMessage = `Bye ${userName} !`;
-                await sendMessage(welcomeMessage);
+            displayChatMessage({ from: '', body: `${userName} left the room.` });
+
+            if (sendWelcomeMessages) {
+                const goodbyeMessage = `Bye ${userName}!`;
+                await sendMessage(goodbyeMessage);
             }
-        
+        } else if (type === 'text') {
+            const body = messageObj.body;
+            const from = messageObj.from;
+            displayChatMessage({ from, body });
+
+            if (body === '.s') {
+                const welcomeMessage = `Hello ${from}, what can I help you with?`;
+                await sendMessage(welcomeMessage);
+            } else if (body === '+wc') {
+                welcomeCheckbox.checked = true;
+                sendWelcomeMessages = true;
+                await sendMessage('Welcome messages activated.');
+            } else if (body === '-wc') {
+                welcomeCheckbox.checked = false;
+                sendWelcomeMessages = false;
+                await sendMessage('Welcome messages deactivated.');
+            }
         } else if (type === 'room_create') {
             if (messageObj.result === 'success') {
                 await joinRoom(messageObj.name);
@@ -268,99 +254,10 @@ const welcomeMessage = `Hello ${from} what can i help you`;
     }
 
     function displayChatMessage(messageObj) {
-        const messageDiv = document.createElement('div');
-        messageDiv.textContent = `${messageObj.from}: ${messageObj.body}`;
-        chatbox.appendChild(messageDiv);
+        const { from, body } = messageObj;
+        const newMessage = document.createElement('div');
+        newMessage.textContent = `${from}: ${body}`;
+        chatbox.appendChild(newMessage);
         chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    async function fetchPublicRooms() {
-        if (isConnected) {
-            const fetchRoomsMessage = {
-                handler: 'fetch_rooms',
-                id: generatePacketID()
-            };
-            await sendMessageToSocket(fetchRoomsMessage);
-        }
-    }
-
-    async function fetchUserList(roomName) {
-        if (isConnected) {
-            const fetchUsersMessage = {
-                handler: 'fetch_users',
-                id: generatePacketID(),
-                room: roomName
-            };
-            await sendMessageToSocket(fetchUsersMessage);
-        }
-    }
-
-    function updateRoomList(rooms) {
-        roomListbox.innerHTML = '';
-        rooms.forEach(room => {
-            const option = document.createElement('option');
-            option.value = room;
-            option.textContent = room;
-            roomListbox.appendChild(option);
-        });
-    }
-
-    function updateUserList(users) {
-        userListDiv.innerHTML = '';
-        users.forEach(user => {
-            const userDiv = document.createElement('div');
-            userDiv.textContent = user;
-            userListDiv.appendChild(userDiv);
-        });
-    }
-
-    function onUserProfileUpdates(userStatus) {
-        // Handle user profile updates
-    }
-
-    function onMucInvitation(inviter, name, privacy) {
-        // Handle MUC (Multi-User Chat) invitation
-    }
-
-    function onUserPresence(userPresence) {
-        // Handle user presence changes
-    }
-
-    function onUserActivityResult(userActivity) {
-        // Handle user activity results
-    }
-
-    function onRoster(roster) {
-        // Handle roster updates
-    }
-
-    function onFriendRequest(friendRequest) {
-        // Handle friend requests
-    }
-
-    function handleRegisterEvent(messageObj) {
-        const status = messageObj.type;
-        if (status === 'success') {
-            statusDiv.textContent = 'Registration successful!';
-        } else {
-            const reason = messageObj.reason;
-            if (reason === 'user_exists') {
-                statusDiv.textContent = 'User already exists.';
-            } else if (reason === 'error_non_latin_name') {
-                statusDiv.textContent = 'Non-Latin characters are not allowed.';
-            } else if (reason === 'limit_reached') {
-                statusDiv.textContent = 'User limit reached.';
-            } else {
-                statusDiv.textContent = 'Registration error.';
-            }
-        }
-    }
-
-    function onGetUserProfile(profile) {
-        // Handle getting user profile
-    }
-
-    function onChatMessageSent(id, timestamp) {
-        // Handle message sent acknowledgment
     }
 });
