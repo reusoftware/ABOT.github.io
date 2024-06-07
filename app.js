@@ -207,9 +207,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleRoomEvent(messageObj) {
         const type = messageObj.type;
         const userName = messageObj.username || 'Unknown';
-
+//const body = messageObj.body;
+//const from = messageObj.from;
+        
         if (type === 'you_joined') {
             displayChatMessage({ sender: 'System', message: `**You** joined the room.` });
+        } else if (type === 'text') {
+            const body = messageObj.body;
+const from = messageObj.from;
+           if (body) ==='@bot'{
+const welcomeMessage = `Hello ${from} what can i help you`;
+                await sendMessage(welcomeMessage);
+           }
         } else if (type === 'user_joined') {
             displayChatMessage({ sender: 'System', message: `**${userName}** joined the room.` });
             if (sendWelcomeMessages) {
