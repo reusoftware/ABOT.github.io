@@ -134,6 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 length: '0'
             };
             await sendMessageToSocket(messageData);
+
+            // Check for special spin command
+            if (message.trim() === '.s') {
+                const responses = ["Good luck!", "Try again!", "Better luck next time!", "Jackpot!", "Spin again!"];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                await sendMessage(randomResponse);
+            }
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
@@ -207,17 +214,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const role = messageObj.role;
 
         if (type === 'you_joined') {
- const role = messageObj.role;
             displayChatMessage({ from: 'System', body: `**You** joined the room as ${role}` });
+
+            // Display room subject
+            displayChatMessage({ from: 'System', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
+
+            // Display list of users with roles
+            messageObj.users.forEach(user => {
+                displayChatMessage({ from: 'System', body: `${user.username} - ${user.role}` });
+            });
         } else if (type === 'user_joined') {
-            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
+            displayChatMessage({ from: 'System', body: `${userName} joined the room as ${role}` });
 
             if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello ${role} ${userName}, welcome back!`;
                 await sendMessage(welcomeMessage);
             }
         } else if (type === 'user_left') {
-            displayChatMessage({ from: '', body: `${userName} left the room.` });
+            displayChatMessage({ from: 'System', body: `${userName} left the room.` });
 
             if (sendWelcomeMessages) {
                 const goodbyeMessage = `Bye ${userName}!`;
@@ -228,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const from = messageObj.from;
             displayChatMessage({ from, body });
 
-            if (body === '.s') {
+            if (body === '@bot') {
                 const welcomeMessage = `Hello ${from}, what can I help you with?`;
                 await sendMessage(welcomeMessage);
             } else if (body === '+wc') {
