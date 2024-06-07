@@ -213,11 +213,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'user_joined') {
             displayChatMessage({ sender: 'System', message: `**${userName}** joined the room.` });
             if (sendWelcomeMessages) {
-                const welcomeMessage = `Hello **${userName}**!`;
+                const welcomeMessage = `Hello ${userName} WelcomeBack!`;
                 await sendMessage(welcomeMessage);
             }
         } else if (type === 'user_left') {
             displayChatMessage({ sender: 'System', message: `**${userName}** left the room.` });
+        if (sendWelcomeMessages) {
+                const welcomeMessage = `Bye ${userName} !`;
+                await sendMessage(welcomeMessage);
+            }
+        
         } else if (type === 'room_create') {
             if (messageObj.result === 'success') {
                 await joinRoom(messageObj.name);
@@ -233,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displayChatMessage(messageObj) {
         const messageDiv = document.createElement('div');
-        messageDiv.textContent = `${messageObj.sender}: ${messageObj.message}`;
+        messageDiv.textContent = `${messageObj.from}: ${messageObj.body}`;
         chatbox.appendChild(messageDiv);
         chatbox.scrollTop = chatbox.scrollHeight;
     }
