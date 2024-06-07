@@ -220,7 +220,8 @@ const welcomeMessage = `Hello ${from} what can i help you`;
                 await sendMessage(welcomeMessage);
            }
         } else if (type === 'user_joined') {
-            displayChatMessage({ sender: 'System', message: `**${userName}** joined the room.` });
+            const role = messageObj.role;
+            displayChatMessage({  `${userName} joined the room as ${role}` });
             if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello ${userName} WelcomeBack!`;
                 await sendMessage(welcomeMessage);
