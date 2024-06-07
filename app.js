@@ -204,90 +204,111 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function handleRoomEvent(messageObj) {
-        const type = messageObj.type;
-        const userName = messageObj.username || 'Unknown';
-        const role = messageObj.role;
+  async function handleRoomEvent(messageObj) {
+    const type = messageObj.type;
+    const userName = messageObj.username || 'Unknown';
+    const role = messageObj.role;
 
-        if (type === 'you_joined') {
-            displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
+    if (type === 'you_joined') {
+        displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
 
-            // Display room subject
-            displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
+        // Display room subject
+        displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
 
-            // Display list of users with roles
-            messageObj.users.forEach(user => {
-                displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
-            });
+        // Display list of users with roles
+        messageObj.users.forEach(user => {
+            displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
+        });
 
-            // Update the user list
-            userList = messageObj.users;
+        // Update the user list
+        userList = messageObj.users;
+        updateUserListbox();
+    } else if (type === 'user_joined') {
+        displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
+
+        if (sendWelcomeMessages) {
+            const welcomeMessage = `Hello ${role} ${userName}, welcome back!`;
+            await sendMessage(welcomeMessage);
+        }
+
+        // Add the new user to the user list
+        userList.push({ username: userName, role: role });
+        updateUserListbox();
+    } else if (type === 'user_left') {
+        displayChatMessage({ from: '', body: `${userName} left the room.` });
+
+        if (sendWelcomeMessages) {
+            const goodbyeMessage = `Bye ${userName}!`;
+            await sendMessage(goodbyeMessage);
+        }
+
+        // Remove the user from the user list
+        userList = userList.filter(user => user.username !== userName);
+        updateUserListbox();
+    } else if (type === 'text') {
+        const body = messageObj.body;
+        const from = messageObj.from;
+        displayChatMessage({ from, body });
+
+        // Check for special spin command
+        if (body === '.s') {
+            const responses = [
+                `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
+                `kick`,
+                `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
+                `${from} you got ☔ Umbrella from me`,
+                `You got a pair of shoes 👟👟 ${from}`,
+                `Dress and Pants 👕 👖 for you ${from}`,
+                `💻 Laptop for you ${from}`,
+                `Great! ${from} you can travel now ✈️`,
+                `${from} you have an apple 🍎`,
+                `kick`,
+                `Carrots for you 🥕 ${from}`,
+                `${from} you got an ice cream 🍦`,
+                `🍺 🍻 Beer for you ${from}`,
+                `You wanna game with me 🏀 ${from}`,
+                `Guitar 🎸 for you ${from}`,
+                `For you❤️ ${from}`
+            ];
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+     if (randomResponse === 'kick'){
+                    await kickUser(from);
+                } else {
+                    await sendMessage(randomResponse);
+                }
+        } else if (body === '+wc') {
+            welcomeCheckbox.checked = true;
+            sendWelcomeMessages = true;
+            await sendMessage('Welcome messages activated.');
+        } else if (body === '-wc') {
+            welcomeCheckbox.checked = false;
+            sendWelcomeMessages = false;
+            await sendMessage('Welcome messages deactivated.');
+        }
+    } else if (type === 'role_changed') {
+        const oldRole = messageObj.old_role;
+        const newRole = messageObj.new_role;
+const actor = messageObj.actor;
+        displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor} `});
+
+        // Update the user's role in the user list
+        const user = userList.find(user => user.username === userName);
+        if (user) {
+            user.role = newRole;
             updateUserListbox();
-        } else if (type === 'user_joined') {
-            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
-
-            if (sendWelcomeMessages) {
-                const welcomeMessage = `Hello ${role} ${userName}, welcome back!`;
-                await sendMessage(welcomeMessage);
-            }
-
-            // Add the new user to the user list
-            userList.push({ username: userName, role: role });
-            updateUserListbox();
-        } else if (type === 'user_left') {
-            displayChatMessage({ from: '', body: `${userName} left the room.` });
-
-            if (sendWelcomeMessages) {
-                const goodbyeMessage = `Bye ${userName}!`;
-                await sendMessage(goodbyeMessage);
-            }
-
-            // Remove the user from the user list
-            userList = userList.filter(user => user.username !== userName);
-            updateUserListbox();
-        } else if (type === 'text') {
-            const body = messageObj.body;
-            const from = messageObj.from;
-            displayChatMessage({ from, body });
-
-            // Check for special spin command
-            if (body === '.s') {
-                const responses = ["Lets Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ ),kick,Lets Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ )   ${from},${from}  you got ☔ Umbrella from me,you got a pair of shoe 👟👟   ${from}, Dress and Pants 👕 👖 for you ${from}, 💻 laptop for you ${from},great! ${from}  you can travel now ✈️,${from} you have an apple 🍎,kick,carrots for you 🥕 ${from},${from} you got an icecream 🍦,🍺 🍻 beer for you ${from},you wanna game with me 🏀 ${from},guitar 🎸 for you ${from},for you❤️ ${from}"
-    ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                await sendMessage(randomResponse);
-            } else if (body === '+wc') {
-                welcomeCheckbox.checked = true;
-                sendWelcomeMessages = true;
-                await sendMessage('Welcome messages activated.');
-            } else if (body === '-wc') {
-                welcomeCheckbox.checked = false;
-                sendWelcomeMessages = false;
-                await sendMessage('Welcome messages deactivated.');
-            }
-        } else if (type === 'role_change') {
-            const oldRole = messageObj.old_role;
-            const newRole = messageObj.new_role;
-            displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole}` });
-
-            // Update the user's role in the user list
-            const user = userList.find(user => user.username === userName);
-            if (user) {
-                user.role = newRole;
-                updateUserListbox();
-            }
-        } else if (type === 'room_create') {
-            if (messageObj.result === 'success') {
-                await joinRoom(messageObj.name);
-            } else if (messageObj.result === 'room_exists') {
-                statusDiv.textContent = `Room ${messageObj.name} already exists.`;
-            } else if (messageObj.result === 'empty_balance') {
-                statusDiv.textContent = 'Cannot create room: empty balance.';
-            } else {
-                statusDiv.textContent = 'Error creating room.';
-            }
+        }
+    } else if (type === 'room_create') {
+        if (messageObj.result === 'success') {
+            await joinRoom(messageObj.name);
+        } else if (messageObj.result === 'room_exists') {
+            statusDiv.textContent = `Room ${messageObj.name} already exists.`;
+        } else if (messageObj.result === 'empty_balance') {
+            statusDiv.textContent = 'Cannot create room: empty balance.';
+        } else {
+            statusDiv.textContent = 'Error creating room.';
         }
     }
+}
 
     function displayChatMessage(messageObj) {
         const { from, body } = messageObj;
@@ -296,6 +317,21 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbox.appendChild(newMessage);
         chatbox.scrollTop = chatbox.scrollHeight;
     }
+
+
+async function kickUser(username) {
+    const kickMessage = {
+        handler: "room_admin",
+        type: "kick",
+        id: generatePacketID(),
+        room: document.getElementById('room').value,
+        t_username: username,
+        t_role: "none"
+    };
+    await sendMessageToSocket(kickMessage);
+}
+
+
 
     function updateUserListbox() {
         userListbox.innerHTML = '';
