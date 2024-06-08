@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const connectWebSocket = async (username, password) => {
-        socket = new WebSocket('ws://localhost:8000/ws');
+        socket = new WebSocket('ws://chatp.net:5333/ws');
         socket.addEventListener('open', () => {
             isConnected = true;
             statusDiv.innerHTML = 'Connected to WebSocket';
