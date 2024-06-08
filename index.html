@@ -1,8 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABOT Chat App</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        .flex-container {
+            display: flex;
+            gap: 20px;
+        }
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
         #chatbox {
             width: 100%;
             height: 300px;
@@ -11,60 +33,90 @@
             overflow-y: auto;
             resize: both;
         }
+        .user-list {
+            width: 200px;
+        }
+        .chat-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-container {
+            display: flex;
+        }
+        .emoji-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .emoji-item {
+            cursor: pointer;
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
-    <div>
-        <label for="username">Username:</label>
-        <input type="text" id="username">
-    </div>
-    <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password">
-    </div>
-    <button id="loginButton">Login</button>
+    <div class="container">
+        <div class="column">
+            <div class="flex-container">
+                <div>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username">
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password">
+                </div>
+                <button id="loginButton">Login</button>
+            </div>
 
-    <div id="status"></div>
+            <div id="status"></div>
 
-    <div>
-        <label for="room">Room:</label>
-        <input type="text" id="room">
-        
-        <button id="joinRoomButton">Join Room</button>
-       
-        <button id="leaveRoomButton">Leave Room</button>
-      
-        <select id="roomListbox"></select>
+            <div class="flex-container">
+                <div>
+                    <label for="room">Room:</label>
+                    <input type="text" id="room">
+                    <button id="joinRoomButton">Join Room</button>
+                    <button id="leaveRoomButton">Leave Room</button>
+                    <select id="roomListbox"></select>
+                    <div id="count"></div>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div id="chatbox"></div>
+                <div class="user-list">
+                    <label for="userListbox">Current Users:</label>
+                    <select id="userListbox" size="10" multiple></select>
+                </div>
+            </div>
+
+            <div class="chat-controls">
+                <input type="text" id="message" placeholder="Type your message here...">
+                <button id="sendMessageButton">Send Message</button>
+            </div>
+
+            <div class="emoji-list" id="emojiList">
+                😊 😂 ❤️ 👍 😢 😡 😍 😎 😜 😴 😱 😲 😏 😒 😖 😞 😟 😤 😬 😈 👿 👻 💀 💩 👋 🤚 ✋ 🖖 👌 ✌️ 🤞 🤟 👊 🤛 🤜 🤚 🤝 🙌 🙏 👏 💪
+            </div>
+
+            <div>
+                <input type="text" id="searchTerm">
+                <button id="searchImageButton">Search Image</button>
+                <img id="imageResult" alt="Image Result">
+            </div>
+
+            <div>
+                <label for="welcomeCheckbox">Send Welcome Messages</label>
+                <input type="checkbox" id="welcomeCheckbox">
+            </div>
+
+            <div>
+                <label for="debugBox">Debug Messages:</label>
+                <textarea id="debugBox" rows="10" cols="50" readonly></textarea>
+            </div>
+        </div>
     </div>
-<div id="count"></div>
-    <div id="chatbox"></div>
-
-    <div>
-        <input type="text" id="message">
-        <button id="sendMessageButton">Send Message</button>
-    </div>
-
-    <div>
-        <input type="text" id="searchTerm">
-        <button id="searchImageButton">Search Image</button>
-        <img id="imageResult" alt="Image Result">
-    </div>
-
-    <div>
-        <label for="welcomeCheckbox">Send Welcome Messages</label>
-        <input type="checkbox" id="welcomeCheckbox">
-    </div>
-
-    <div>
-        <label for="userListbox">Current Users:</label>
-        <select id="userListbox" size="10" multiple></select>
-    </div>
-
-    <div>
-        <label for="debugBox">Debug Messages:</label>
-        <textarea id="debugBox" rows="10" cols="50" readonly></textarea>
-    </div>
-
     <script src="app.js"></script>
 </body>
 </html>
