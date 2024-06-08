@@ -12,12 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessageButton = document.getElementById('sendMessageButton');
     const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
- const statuscount = document.getElementById('count');
+    const statusCount = document.getElementById('count');
     const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
     const userListbox = document.getElementById('userListbox');
     const debugBox = document.getElementById('debugBox');
+    const emojiList = document.getElementById('emojiList');
+    const messageInput = document.getElementById('message');
 
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
@@ -37,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     sendMessageButton.addEventListener('click', async () => {
-        const message = document.getElementById('message').value;
+        const message = messageInput.value;
         await sendMessage(message);
     });
 
@@ -54,6 +56,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedRoom = roomListbox.value;
         if (selectedRoom) {
             await joinRoom(selectedRoom);
+        }
+    });
+
+    emojiList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('emoji-item')) {
+            const emoji = event.target.textContent;
+            messageInput.value += emoji;
         }
     });
 
@@ -136,26 +145,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 length: '0'
             };
             await sendMessageToSocket(messageData);
-
-          
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
     }
 
     async function sendMessageToSocket(message) {
-        if (isConnected && socket.readyState === WebSocket.OPEN) {
-            console.log('Sending message to socket:', message);
-            socket.send(JSON.stringify(message));
-        } else {
-            statusDiv.textContent = 'WebSocket is not open';
-            console.error('WebSocket is not open');
+        return new Promise((resolve, reject) => {
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(message));
+                resolve();
+            } else {
+                reject(new Error('WebSocket is not connected or not open'));
+            }
+        });
+    }
+
+    async function searchImage(searchTerm) {
+        const apiKey = 'YOUR_PIXABAY_API_KEY';  // Replace with your Pixabay API key
+        const response = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(searchTerm)}&image_type=photo`);
+        const data = await response.json();
+        if (data.hits && data.hits.length > 0) {
+            const imageUrl = data.hits[0].webformatURL;
+            const imageResult = document.getElementById('imageResult');
+            imageResult.src = imageUrl;
         }
     }
 
     function generatePacketID() {
         packetIdNum += 1;
-        return `R.U.BULAN©pinoy-2023®#${packetIdNum.toString().padStart(3, '0')}`;
+        return packetIdNum.toString();
     }
 
     function processReceivedMessage(message) {
@@ -205,151 +224,142 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-  async function handleRoomEvent(messageObj) {
-    const type = messageObj.type;
-    const userName = messageObj.username || 'Unknown';
-    const role = messageObj.role;
-const count = messageObj.current_count;
-      const roomName = messageObj.name
-    if (type === 'you_joined') {
-        displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-statuscount.textContent = 'Total User : {count}';
-        // Display room subject
-        displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
+    async function handleRoomEvent(messageObj) {
+        const type = messageObj.type;
+        const userName = messageObj.username || 'Unknown';
+        const role = messageObj.role;
+        const count = messageObj.current_count;
+        const roomName = messageObj.name;
 
-        // Display list of users with roles
-        messageObj.users.forEach(user => {
-            displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
-        });
+        if (type === 'you_joined') {
+            displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
+            statusCount.textContent = `Total User: ${count}`;
 
-        // Update the user list
-        userList = messageObj.users;
-        updateUserListbox();
-    } else if (type === 'user_joined') {
-        displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
+            // Display room subject
+            displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
 
-        if (sendWelcomeMessages) {
+            // Display list of users with roles
+            messageObj.users.forEach(user => {
+                displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
+            });
 
-               const welcomeMessage = [
-                `welcome ${userName}`,
-                `Nice to see you here ${userName}`,
-                `Hi ${userName}`,
-                `Welcome ${userName} here at ${roomName}`,
-                `how are you ${userName}`,
-                `welcome to ${roomName} ${userName}`
-            ];
-            const randomwelcomeMessage = sendWelcomeMessages[Math.floor(Math.random() * sendWelcomeMessages.length)];
-                 await sendMessage(randomwelcomeMessage);
-          
+            // Update the user list
+            userList = messageObj.users;
+            updateUserListbox();
+        } else if (type === 'user_joined') {
+            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
 
-            
-        }
+            if (sendWelcomeMessages) {
+                const welcomeMessages = [
+                    `welcome ${userName}`,
+                    `Nice to see you here ${userName}`,
+                    `Hi ${userName}`,
+                    `Welcome ${userName} here at ${roomName}`,
+                    `how are you ${userName}`,
+                    `welcome to ${roomName} ${userName}`
+                ];
+                const randomWelcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+                await sendMessage(randomWelcomeMessage);
+            }
 
-        // Add the new user to the user list
-        userList.push({ username: userName, role: role });
-        updateUserListbox();
-    } else if (type === 'user_left') {
-        displayChatMessage({ from: , body: `${userName} left the room.` });
+            // Add the new user to the user list
+            userList.push({ username: userName, role: role });
+            updateUserListbox();
+        } else if (type === 'user_left') {
+            displayChatMessage({ from: '', body: `${userName} left the room.` });
 
-        if (sendWelcomeMessages) {
-            const goodbyeMessage = `Bye ${userName}!`;
-            await sendMessage(goodbyeMessage);
-        }
+            if (sendWelcomeMessages) {
+                const goodbyeMessage = `Bye ${userName}!`;
+                await sendMessage(goodbyeMessage);
+            }
 
-        // Remove the user from the user list
-        userList = userList.filter(user => user.username !== userName);
-        updateUserListbox();
-    } else if (type === 'text') {
-        const body = messageObj.body;
-        const from = messageObj.from;
-        displayChatMessage({ from, body });
+            // Remove the user from the user list
+            userList = userList.filter(user => user.username !== userName);
+            updateUserListbox();
+        } else if (type === 'text') {
+            const body = messageObj.body;
+            const from = messageObj.from;
+            displayChatMessage({ from, body });
 
-        // Check for special spin command
-        if (body === '.s') {
-            const responses = [
-                `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
-                `kick`,
-                `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
-                `${from} you got ☔ Umbrella from me`,
-                `You got a pair of shoes 👟👟 ${from}`,
-                `Dress and Pants 👕 👖 for you ${from}`,
-                `💻 Laptop for you ${from}`,
-                `Great! ${from} you can travel now ✈️`,
-                `${from} you have an apple 🍎`,
-                `kick`,
-                `Carrots for you 🥕 ${from}`,
-                `${from} you got an ice cream 🍦`,
-                `🍺 🍻 Beer for you ${from}`,
-                `You wanna game with me 🏀 ${from}`,
-                `Guitar 🎸 for you ${from}`,
-                `For you❤️ ${from}`
-            ];
-            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-     if (randomResponse === 'kick'){
+            // Check for special spin command
+            if (body === '.s') {
+                const responses = [
+                    `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
+                    `kick`,
+                    `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
+                    `${from} you got ☔ Umbrella from me`,
+                    `You got a pair of shoes 👟👟 ${from}`,
+                    `Dress and Pants 👕 👖 for you ${from}`,
+                    `💻 Laptop for you ${from}`,
+                    `Great! ${from} you can travel now ✈️`,
+                    `${from} you have an apple 🍎`,
+                    `kick`,
+                    `Carrots for you 🥕 ${from}`,
+                    `${from} you got an ice cream 🍦`,
+                    `🍺 🍻 Beer for you ${from}`,
+                    `You wanna game with me 🏀 ${from}`,
+                    `Guitar 🎸 for you ${from}`,
+                    `For you❤️ ${from}`
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                if (randomResponse === 'kick') {
                     await kickUser(from);
                 } else {
                     await sendMessage(randomResponse);
                 }
-        } else if (body === '+wc') {
-            welcomeCheckbox.checked = true;
-            sendWelcomeMessages = true;
-            await sendMessage('Welcome messages activated.');
-        } else if (body === '-wc') {
-            welcomeCheckbox.checked = false;
-            sendWelcomeMessages = false;
-            await sendMessage('Welcome messages deactivated.');
-        }
-    } else if (type === 'role_changed') {
-        const oldRole = messageObj.old_role;
-        const newRole = messageObj.new_role;
-const actor = messageObj.actor;
-        displayChatMessage({ from: , body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor} `});
+            } else if (body === '+wc') {
+                welcomeCheckbox.checked = true;
+                sendWelcomeMessages = true;
+                await sendMessage('Welcome messages activated.');
+            } else if (body === '-wc') {
+                welcomeCheckbox.checked = false;
+                sendWelcomeMessages = false;
+                await sendMessage('Welcome messages deactivated.');
+            }
+        } else if (type === 'role_changed') {
+            const oldRole = messageObj.old_role;
+            const newRole = messageObj.new_role;
+            const actor = messageObj.actor;
+            displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor}` });
 
-        // Update the user's role in the user list
-        const user = userList.find(user => user.username === userName);
-        if (user) {
-            user.role = newRole;
-            updateUserListbox();
-        }
-    } else if (type === 'room_create') {
-        if (messageObj.result === 'success') {
-            await joinRoom(messageObj.name);
-        } else if (messageObj.result === 'room_exists') {
-            statusDiv.textContent = `Room ${messageObj.name} already exists.`;
-        } else if (messageObj.result === 'empty_balance') {
-            statusDiv.textContent = 'Cannot create room: empty balance.';
-        } else {
-            statusDiv.textContent = 'Error creating room.';
+            // Update the user's role in the user list
+            const user = userList.find(user => user.username === userName);
+            if (user) {
+                user.role = newRole;
+                updateUserListbox();
+            }
+        } else if (type === 'room_create') {
+            if (messageObj.result === 'success') {
+                await joinRoom(messageObj.name);
+            } else if (messageObj.result === 'room_exists') {
+                statusDiv.textContent = `Room ${messageObj.name} already exists.`;
+            } else if (messageObj.result === 'empty_balance') {
+                statusDiv.textContent = 'Cannot create room: empty balance.';
+            } else {
+                statusDiv.textContent = 'Error creating room.';
+            }
         }
     }
-}
 
-  function displayChatMessage(messageObj) {
+    function displayChatMessage(messageObj) {
         const { from, body } = messageObj;
         const newMessage = document.createElement('div');
         newMessage.textContent = `${from}: ${body}`;
         chatbox.appendChild(newMessage);
         chatbox.scrollTop = chatbox.scrollHeight;
-
-
-
     }
 
-
-
-async function kickUser(username) {
-    const kickMessage = {
-        handler: "room_admin",
-        type: "kick",
-        id: generatePacketID(),
-        room: document.getElementById('room').value,
-        t_username: username,
-        t_role: "none"
-    };
-    await sendMessageToSocket(kickMessage);
-}
-
-
+    async function kickUser(username) {
+        const kickMessage = {
+            handler: "room_admin",
+            type: "kick",
+            id: generatePacketID(),
+            room: document.getElementById('room').value,
+            t_username: username,
+            t_role: "none"
+        };
+        await sendMessageToSocket(kickMessage);
+    }
 
     function updateUserListbox() {
         userListbox.innerHTML = '';
