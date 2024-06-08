@@ -210,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userName = messageObj.username || 'Unknown';
     const role = messageObj.role;
 const count = messageObj.current_count;
+      const roomName = messageObj.name
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
 statuscount.textContent = '${count}';
@@ -228,15 +229,27 @@ statuscount.textContent = '${count}';
         displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
 
         if (sendWelcomeMessages) {
-            const welcomeMessage = `Hello ${role} ${userName}, welcome back!`;
-            await sendMessage(welcomeMessage);
+
+               const welcomeMessage = [
+                `welcome ${userName}`,
+                `Nice to see you here ${userName}`,
+                `Hi ${userName}`,
+                `Welcome ${userName} here at ${roomName}`,
+                `how are you ${userName}`,
+                `welcome to ${roomName} ${userName}`
+            ];
+            const randomwelcomeMessage = sendWelcomeMessages[Math.floor(Math.random() * sendWelcomeMessages.length)];
+                 await sendMessage(randomwelcomeMessage);
+          
+
+            
         }
 
         // Add the new user to the user list
         userList.push({ username: userName, role: role });
         updateUserListbox();
     } else if (type === 'user_left') {
-        displayChatMessage({ from: '', body: `${userName} left the room.` });
+        displayChatMessage({ from: , body: `${userName} left the room.` });
 
         if (sendWelcomeMessages) {
             const goodbyeMessage = `Bye ${userName}!`;
@@ -290,7 +303,7 @@ statuscount.textContent = '${count}';
         const oldRole = messageObj.old_role;
         const newRole = messageObj.new_role;
 const actor = messageObj.actor;
-        displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor} `});
+        displayChatMessage({ from: , body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor} `});
 
         // Update the user's role in the user list
         const user = userList.find(user => user.username === userName);
