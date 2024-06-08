@@ -38,341 +38,175 @@ document.addEventListener('DOMContentLoaded', () => {
         await leaveRoom(room);
     });
 
-    sendMessageButton.addEventListener('click', async () => {
+    sendMessageButton.addEventListener('click', () => {
         const message = messageInput.value;
-        await sendMessage(message);
+        sendMessage(message);
+        messageInput.value = ''; // Clear input after sending
+    });
+
+    emojiList.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('emoji-item')) {
+            const emoji = target.getAttribute('data-emoji');
+            messageInput.value += emoji;
+            messageInput.focus(); // Keep focus on the input field
+        }
     });
 
     searchImageButton.addEventListener('click', async () => {
         const searchTerm = document.getElementById('searchTerm').value;
-        await searchImage(searchTerm);
+        const imageUrl = await searchImage(searchTerm);
+        document.getElementById('imageResult').src = imageUrl;
     });
 
-    welcomeCheckbox.addEventListener('change', () => {
-        sendWelcomeMessages = welcomeCheckbox.checked;
+    welcomeCheckbox.addEventListener('change', (event) => {
+        sendWelcomeMessages = event.target.checked;
     });
 
-    roomListbox.addEventListener('change', async () => {
-        const selectedRoom = roomListbox.value;
-        if (selectedRoom) {
-            await joinRoom(selectedRoom);
-        }
-    });
-
-    emojiList.addEventListener('click', (event) => {
-        if (event.target.classList.contains('emoji-item')) {
-            const emoji = event.target.textContent;
-            messageInput.value += emoji;
-        }
-    });
-
-    async function connectWebSocket(username, password) {
-        statusDiv.textContent = 'Connecting to server...';
-        socket = new WebSocket('wss://chatp.net:5333/server');
-
-        socket.onopen = async () => {
+    const connectWebSocket = async (username, password) => {
+        socket = new WebSocket('ws://localhost:8000/ws');
+        socket.addEventListener('open', () => {
             isConnected = true;
-            statusDiv.textContent = 'Connected to server';
+            statusDiv.innerHTML = 'Connected to WebSocket';
+            debugBox.value += 'Connected to WebSocket\n';
+            login(username, password);
+        });
 
-            const loginMessage = {
-                username: username,
-                password: password,
-                handler: 'login',
-                id: generatePacketID()
-            };
-            console.log('Sending login message:', loginMessage);
-            await sendMessageToSocket(loginMessage);
-        };
+        socket.addEventListener('message', (event) => {
+            const packet = JSON.parse(event.data);
+            handlePacket(packet);
+        });
 
-        socket.onmessage = (event) => {
-            console.log('Received message:', event.data);
-            processReceivedMessage(event.data);
-        };
-
-        socket.onclose = () => {
+        socket.addEventListener('close', () => {
             isConnected = false;
-            statusDiv.textContent = 'Disconnected from server';
-        };
+            statusDiv.innerHTML = 'WebSocket connection closed';
+            debugBox.value += 'WebSocket connection closed\n';
+        });
 
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            statusDiv.textContent = 'WebSocket error. Check console for details.';
-        };
-    }
+        socket.addEventListener('error', (error) => {
+            statusDiv.innerHTML = 'WebSocket error: ' + error.message;
+            debugBox.value += 'WebSocket error: ' + error.message + '\n';
+        });
+    };
 
-    async function joinRoom(roomName) {
-        if (isConnected) {
-            const joinMessage = {
-                handler: 'room_join',
-                id: generatePacketID(),
-                name: roomName
-            };
-            await sendMessageToSocket(joinMessage);
-            await fetchUserList(roomName);
-
-            if (sendWelcomeMessages) {
-                const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
-                await sendMessage(welcomeMessage);
-            }
-        } else {
-            statusDiv.textContent = 'Not connected to server';
-        }
-    }
-
-    async function leaveRoom(roomName) {
-        if (isConnected) {
-            const leaveMessage = {
-                handler: 'room_leave',
-                id: generatePacketID(),
-                name: roomName
-            };
-            await sendMessageToSocket(leaveMessage);
-            statusDiv.textContent = `You left the room: ${roomName}`;
-        } else {
-            statusDiv.textContent = 'Not connected to server';
-        }
-    }
-
-    async function sendMessage(message) {
-        if (isConnected) {
-            const messageData = {
-                handler: 'room_message',
-                type: 'text',
-                id: generatePacketID(),
-                body: message,
-                room: document.getElementById('room').value,
-                url: '',
-                length: '0'
-            };
-            await sendMessageToSocket(messageData);
-        } else {
-            statusDiv.textContent = 'Not connected to server';
-        }
-    }
-
-    async function sendMessageToSocket(message) {
-        return new Promise((resolve, reject) => {
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify(message));
-                resolve();
-            } else {
-                reject(new Error('WebSocket is not connected or not open'));
+    const login = (username, password) => {
+        sendPacket({
+            packetId: packetIdNum++,
+            packetType: 'login',
+            packetBody: {
+                username: username,
+                password: password
             }
         });
-    }
+    };
 
-    async function searchImage(searchTerm) {
-        const apiKey = 'YOUR_PIXABAY_API_KEY';  // Replace with your Pixabay API key
-        const response = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(searchTerm)}&image_type=photo`);
-        const data = await response.json();
-        if (data.hits && data.hits.length > 0) {
-            const imageUrl = data.hits[0].webformatURL;
-            const imageResult = document.getElementById('imageResult');
-            imageResult.src = imageUrl;
+    const joinRoom = (room) => {
+        sendPacket({
+            packetId: packetIdNum++,
+            packetType: 'join_room',
+            packetBody: {
+                room: room
+            }
+        });
+    };
+
+    const leaveRoom = (room) => {
+        sendPacket({
+            packetId: packetIdNum++,
+            packetType: 'leave_room',
+            packetBody: {
+                room: room
+            }
+        });
+    };
+
+    const sendMessage = (message) => {
+        sendPacket({
+            packetId: packetIdNum++,
+            packetType: 'send_message',
+            packetBody: {
+                message: message
+            }
+        });
+    };
+
+    const searchImage = async (searchTerm) => {
+        // Simulate an image search by returning a placeholder URL
+        // Replace this with actual image search logic if needed
+        return 'https://via.placeholder.com/150?text=' + encodeURIComponent(searchTerm);
+    };
+
+    const sendPacket = (packet) => {
+        if (isConnected) {
+            socket.send(JSON.stringify(packet));
+        } else {
+            statusDiv.innerHTML = 'WebSocket is not connected';
+            debugBox.value += 'WebSocket is not connected\n';
         }
-    }
+    };
 
-    function generatePacketID() {
-        packetIdNum += 1;
-        return packetIdNum.toString();
-    }
+    const handlePacket = (packet) => {
+        const { packetType, packetBody } = packet;
 
-    function processReceivedMessage(message) {
-        console.log('Received message:', message);
-        debugBox.value += `${message}\n`;
-
-        try {
-            const jsonDict = JSON.parse(message);
-
-            if (jsonDict) {
-                const handler = jsonDict.handler;
-
-                if (handler === 'login_event') {
-                    handleLoginEvent(jsonDict);
-                } else if (handler === 'room_event') {
-                    handleRoomEvent(jsonDict);
-                } else if (handler === 'chat_message') {
-                    displayChatMessage(jsonDict);
-                } else if (handler === 'presence') {
-                    onUserProfileUpdates(jsonDict);
-                } else if (handler === 'group_invite') {
-                    onMucInvitation(jsonDict.inviter, jsonDict.name, 'private');
-                } else if (handler === 'user_online' || handler === 'user_offline') {
-                    onUserPresence(jsonDict);
-                } else if (handler === 'muc_event') {
-                    handleMucEvent(jsonDict);
-                } else if (handler === 'last_activity') {
-                    onUserActivityResult(jsonDict);
-                } else if (handler === 'roster') {
-                    onRoster(jsonDict);
-                } else if (handler === 'friend_requests') {
-                    onFriendRequest(jsonDict);
-                } else if (handler === 'register_event') {
-                    handleRegisterEvent(jsonDict);
-                } else if (handler === 'profile_other') {
-                    onGetUserProfile(jsonDict);
-                } else if (handler === 'followers_event') {
-                    onFollowersList(jsonDict);
-                } else if (handler === 'add_buddy') {
-                    onAddBuddy(jsonDict);
+        switch (packetType) {
+            case 'login_response':
+                if (packetBody.success) {
+                    statusDiv.innerHTML = 'Login successful';
+                    debugBox.value += 'Login successful\n';
+                    userList = packetBody.users || [];
+                    updateUserList();
                 } else {
-                    console.log('Unknown handler:', handler);
+                    statusDiv.innerHTML = 'Login failed: ' + packetBody.error;
+                    debugBox.value += 'Login failed: ' + packetBody.error + '\n';
                 }
-            }
-        } catch (ex) {
-            console.error('Error processing received message:', ex);
-        }
-    }
+                break;
 
-    async function handleRoomEvent(messageObj) {
-        const type = messageObj.type;
-        const userName = messageObj.username || 'Unknown';
-        const role = messageObj.role;
-        const count = messageObj.current_count;
-        const roomName = messageObj.name;
-
-        if (type === 'you_joined') {
-            displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-            statusCount.textContent = `Total User: ${count}`;
-
-            // Display room subject
-            displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
-
-            // Display list of users with roles
-            messageObj.users.forEach(user => {
-                displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
-            });
-
-            // Update the user list
-            userList = messageObj.users;
-            updateUserListbox();
-        } else if (type === 'user_joined') {
-            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
-
-            if (sendWelcomeMessages) {
-                const welcomeMessages = [
-                    `welcome ${userName}`,
-                    `Nice to see you here ${userName}`,
-                    `Hi ${userName}`,
-                    `Welcome ${userName} here at ${roomName}`,
-                    `how are you ${userName}`,
-                    `welcome to ${roomName} ${userName}`
-                ];
-                const randomWelcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-                await sendMessage(randomWelcomeMessage);
-            }
-
-            // Add the new user to the user list
-            userList.push({ username: userName, role: role });
-            updateUserListbox();
-        } else if (type === 'user_left') {
-            displayChatMessage({ from: '', body: `${userName} left the room.` });
-
-            if (sendWelcomeMessages) {
-                const goodbyeMessage = `Bye ${userName}!`;
-                await sendMessage(goodbyeMessage);
-            }
-
-            // Remove the user from the user list
-            userList = userList.filter(user => user.username !== userName);
-            updateUserListbox();
-        } else if (type === 'text') {
-            const body = messageObj.body;
-            const from = messageObj.from;
-            displayChatMessage({ from, body });
-
-            // Check for special spin command
-            if (body === '.s') {
-                const responses = [
-                    `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
-                    `kick`,
-                    `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
-                    `${from} you got ☔ Umbrella from me`,
-                    `You got a pair of shoes 👟👟 ${from}`,
-                    `Dress and Pants 👕 👖 for you ${from}`,
-                    `💻 Laptop for you ${from}`,
-                    `Great! ${from} you can travel now ✈️`,
-                    `${from} you have an apple 🍎`,
-                    `kick`,
-                    `Carrots for you 🥕 ${from}`,
-                    `${from} you got an ice cream 🍦`,
-                    `🍺 🍻 Beer for you ${from}`,
-                    `You wanna game with me 🏀 ${from}`,
-                    `Guitar 🎸 for you ${from}`,
-                    `For you❤️ ${from}`
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                if (randomResponse === 'kick') {
-                    await kickUser(from);
+            case 'join_room_response':
+                if (packetBody.success) {
+                    statusDiv.innerHTML = 'Joined room: ' + packetBody.room;
+                    debugBox.value += 'Joined room: ' + packetBody.room + '\n';
+                    if (sendWelcomeMessages) {
+                        sendMessage('Hello everyone! ' + currentUsername + ' has joined the room.');
+                    }
                 } else {
-                    await sendMessage(randomResponse);
+                    statusDiv.innerHTML = 'Failed to join room: ' + packetBody.error;
+                    debugBox.value += 'Failed to join room: ' + packetBody.error + '\n';
                 }
-            } else if (body === '+wc') {
-                welcomeCheckbox.checked = true;
-                sendWelcomeMessages = true;
-                await sendMessage('Welcome messages activated.');
-            } else if (body === '-wc') {
-                welcomeCheckbox.checked = false;
-                sendWelcomeMessages = false;
-                await sendMessage('Welcome messages deactivated.');
-            }
-        } else if (type === 'role_changed') {
-            const oldRole = messageObj.old_role;
-            const newRole = messageObj.new_role;
-            const actor = messageObj.actor;
-            displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor}` });
+                break;
 
-            // Update the user's role in the user list
-            const user = userList.find(user => user.username === userName);
-            if (user) {
-                user.role = newRole;
-                updateUserListbox();
-            }
-        } else if (type === 'room_create') {
-            if (messageObj.result === 'success') {
-                await joinRoom(messageObj.name);
-            } else if (messageObj.result === 'room_exists') {
-                statusDiv.textContent = `Room ${messageObj.name} already exists.`;
-            } else if (messageObj.result === 'empty_balance') {
-                statusDiv.textContent = 'Cannot create room: empty balance.';
-            } else {
-                statusDiv.textContent = 'Error creating room.';
-            }
+            case 'leave_room_response':
+                if (packetBody.success) {
+                    statusDiv.innerHTML = 'Left room: ' + packetBody.room;
+                    debugBox.value += 'Left room: ' + packetBody.room + '\n';
+                } else {
+                    statusDiv.innerHTML = 'Failed to leave room: ' + packetBody.error;
+                    debugBox.value += 'Failed to leave room: ' + packetBody.error + '\n';
+                }
+                break;
+
+            case 'user_list_update':
+                userList = packetBody.users || [];
+                updateUserList();
+                break;
+
+            case 'new_message':
+                const message = packetBody.message;
+                chatbox.innerHTML += `<div>${message}</div>`;
+                chatbox.scrollTop = chatbox.scrollHeight; // Auto-scroll to the bottom
+                break;
+
+            default:
+                debugBox.value += 'Unknown packet type: ' + packetType + '\n';
         }
-    }
+    };
 
-    function displayChatMessage(messageObj) {
-        const { from, body } = messageObj;
-        const newMessage = document.createElement('div');
-        newMessage.textContent = `${from}: ${body}`;
-        chatbox.appendChild(newMessage);
-        chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-    async function kickUser(username) {
-        const kickMessage = {
-            handler: "room_admin",
-            type: "kick",
-            id: generatePacketID(),
-            room: document.getElementById('room').value,
-            t_username: username,
-            t_role: "none"
-        };
-        await sendMessageToSocket(kickMessage);
-    }
-
-    function updateUserListbox() {
+    const updateUserList = () => {
         userListbox.innerHTML = '';
-
-        const sortedUsers = userList.sort((a, b) => {
-            const roles = ['creator', 'owner', 'admin', 'member', 'none'];
-            return roles.indexOf(a.role) - roles.indexOf(b.role);
-        });
-
-        sortedUsers.forEach(user => {
+        userList.forEach(user => {
             const option = document.createElement('option');
-            option.textContent = `${user.username} (${user.role})`;
-            userListbox.appendChild(option);
+            option.text = user.username;
+            userListbox.add(option);
         });
-    }
+        statusCount.innerHTML = 'Users online: ' + userList.length;
+    };
 });
