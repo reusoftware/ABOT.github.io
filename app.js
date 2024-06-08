@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const count = messageObj.current_count;
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-statuscount.textContent = 'count';
+statuscount.textContent = '${count}';
         // Display room subject
         displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
 
