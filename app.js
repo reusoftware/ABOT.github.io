@@ -224,130 +224,186 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function handleRoomEvent(messageObj) {
-        const type = messageObj.type;
-        const userName = messageObj.username || 'Unknown';
-        const role = messageObj.role;
-        const count = messageObj.current_count;
-        const roomName = messageObj.name;
+async function handleRoomEvent(messageObj) {
+    const type = messageObj.type;
+    const userName = messageObj.username || 'Unknown';
+    const role = messageObj.role;
+    const count = messageObj.current_count;
+    const roomName = messageObj.name;
 
-        if (type === 'you_joined') {
-            displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-            statusCount.textContent = `Total User: ${count}`;
+    if (type === 'you_joined') {
+        displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
+        statusCount.textContent = `Total User: ${count}`;
 
-            // Display room subject
-            displayChatMessage({ from: '', body: `Room subject: ${messageObj.subject} (by ${messageObj.subject_author})` });
+        // Display room subject with proper HTML rendering
+        displayRoomSubject(`Room subject: ${messageObj.subject} (by ${messageObj.subject_author})`);
 
-            // Display list of users with roles
-            messageObj.users.forEach(user => {
-                displayChatMessage({ from: '', body: `${user.username} - ${user.role}` });
-            });
+        // Display list of users with roles
+        messageObj.users.forEach(user => {
+            displayChatMessage({ from: user.username, body: `joined the room as ${user.role}`, role: user.role }, 'green');
+        });
 
-            // Update the user list
-            userList = messageObj.users;
-            updateUserListbox();
-        } else if (type === 'user_joined') {
-            displayChatMessage({ from: '', body: `${userName} joined the room as ${role}` });
+        // Update the user list
+        userList = messageObj.users;
+        updateUserListbox();
+    } else if (type === 'user_joined') {
+        displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
 
-            if (sendWelcomeMessages) {
-                const welcomeMessages = [
-                    `welcome ${userName}`,
-                    `Nice to see you here ${userName}`,
-                    `Hi ${userName}`,
-                    `Welcome ${userName} here at ${roomName}`,
-                    `how are you ${userName}`,
-                    `welcome to ${roomName} ${userName}`
-                ];
-                const randomWelcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-                await sendMessage(randomWelcomeMessage);
-            }
+        if (sendWelcomeMessages) {
+            const welcomeMessages = [
+                `welcome ${userName}`,
+                `Nice to see you here ${userName}`,
+                `Hi ${userName}`,
+                `Welcome ${userName} here at ${roomName}`,
+                `how are you ${userName}`,
+                `welcome to ${roomName} ${userName}`
+            ];
+            const randomWelcomeMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+            await sendMessage(randomWelcomeMessage);
+        }
 
-            // Add the new user to the user list
-            userList.push({ username: userName, role: role });
-            updateUserListbox();
-        } else if (type === 'user_left') {
-            displayChatMessage({ from: '', body: `${userName} left the room.` });
+        // Add the new user to the user list
+        userList.push({ username: userName, role });
+        updateUserListbox();
+    } else if (type === 'user_left') {
+        displayChatMessage({ from: userName, body: 'left the room.', role }, 'darkgreen');
 
-            if (sendWelcomeMessages) {
-                const goodbyeMessage = `Bye ${userName}!`;
-                await sendMessage(goodbyeMessage);
-            }
+        if (sendWelcomeMessages) {
+            const goodbyeMessage = `Bye ${userName}!`;
+            await sendMessage(goodbyeMessage);
+        }
 
-            // Remove the user from the user list
-            userList = userList.filter(user => user.username !== userName);
-            updateUserListbox();
-        } else if (type === 'text') {
-            const body = messageObj.body;
-            const from = messageObj.from;
-            displayChatMessage({ from, body });
+        // Remove the user from the user list
+        userList = userList.filter(user => user.username !== userName);
+        updateUserListbox();
+    } else if (type === 'text') {
+        const body = messageObj.body;
+        const from = messageObj.from;
+        displayChatMessage({ from, body, role: messageObj.role });
 
-            // Check for special spin command
-            if (body === '.s') {
-                const responses = [
-                    `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
-                    `kick`,
-                    `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
-                    `${from} you got ☔ Umbrella from me`,
-                    `You got a pair of shoes 👟👟 ${from}`,
-                    `Dress and Pants 👕 👖 for you ${from}`,
-                    `💻 Laptop for you ${from}`,
-                    `Great! ${from} you can travel now ✈️`,
-                    `${from} you have an apple 🍎`,
-                    `kick`,
-                    `Carrots for you 🥕 ${from}`,
-                    `${from} you got an ice cream 🍦`,
-                    `🍺 🍻 Beer for you ${from}`,
-                    `You wanna game with me 🏀 ${from}`,
-                    `Guitar 🎸 for you ${from}`,
-                    `For you❤️ ${from}`
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                if (randomResponse === 'kick') {
-                    await kickUser(from);
-                } else {
-                    await sendMessage(randomResponse);
-                }
-            } else if (body === '+wc') {
-                welcomeCheckbox.checked = true;
-                sendWelcomeMessages = true;
-                await sendMessage('Welcome messages activated.');
-            } else if (body === '-wc') {
-                welcomeCheckbox.checked = false;
-                sendWelcomeMessages = false;
-                await sendMessage('Welcome messages deactivated.');
-            }
-        } else if (type === 'role_changed') {
-            const oldRole = messageObj.old_role;
-            const newRole = messageObj.new_role;
-            const actor = messageObj.actor;
-            displayChatMessage({ from: '', body: `${userName} changed role from ${oldRole} to ${newRole} by ${actor}` });
+        // Check for special spin command
+        if (body === '.s') {
+            const responses = [
+                `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
+                `kick`,
+                `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
+                `${from} you got ☔ Umbrella from me`,
+                `You got a pair of shoes 👟👟 ${from}`,
+                `Dress and Pants 👕 👖 for you ${from}`,
+                `💻 Laptop for you ${from}`,
+                `Great! ${from} you can travel now ✈️`,
+                `${from} you have an apple 🍎`,
+                `kick`,
+                `Carrots for you 🥕 ${from}`,
+                `${from} you got an ice cream 🍦`,
+                `🍺 🍻 Beer for you ${from}`,
+                `You wanna game with me 🏀 ${from}`,
+                `Guitar 🎸 for you ${from}`,
+                `For you❤️ ${from}`
+            ];
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            if (randomResponse === 'kick') {
+                await sendMessage( `Sorry! You Got Kick  ${from}`);
 
-            // Update the user's role in the user list
-            const user = userList.find(user => user.username === userName);
-            if (user) {
-                user.role = newRole;
-                updateUserListbox();
-            }
-        } else if (type === 'room_create') {
-            if (messageObj.result === 'success') {
-                await joinRoom(messageObj.name);
-            } else if (messageObj.result === 'room_exists') {
-                statusDiv.textContent = `Room ${messageObj.name} already exists.`;
-            } else if (messageObj.result === 'empty_balance') {
-                statusDiv.textContent = 'Cannot create room: empty balance.';
+   await kickUser(from);
             } else {
-                statusDiv.textContent = 'Error creating room.';
+                await sendMessage(randomResponse);
             }
+        } else if (body === '+wc') {
+            welcomeCheckbox.checked = true;
+            sendWelcomeMessages = true;
+            await sendMessage('Welcome messages activated.');
+        } else if (body === '-wc') {
+            welcomeCheckbox.checked = false;
+            sendWelcomeMessages = false;
+            await sendMessage('Welcome messages deactivated.');
+        }
+     } else if (type === 'role_changed') {
+        const oldRole = messageObj.old_role;
+        const newRole = messageObj.new_role;
+        const user = messageObj.t_username;
+        const actor = messageObj.actor;
+        const color = getRoleChangeColor(newRole);
+        displayChatMessage({ from: '', body: `${user} changed role from ${oldRole} to ${newRole} by ${actor}` }, color);
+
+        // Update the user's role in the user list
+        const userObj = userList.find(user => user.username === user);
+        if (userObj) {
+            userObj.role = newRole;
+            updateUserListbox();
+        }
+    } else if (type === 'room_create') {
+        if (messageObj.result === 'success') {
+            await joinRoom(messageObj.name);
+        } else if (messageObj.result === 'room_exists') {
+            statusDiv.textContent = `Room ${messageObj.name} already exists.`;
+        } else if (messageObj.result === 'empty_balance') {
+            statusDiv.textContent = 'Cannot create room: empty balance.';
+        } else {
+            statusDiv.textContent = 'Error creating room.';
         }
     }
+}
 
-    function displayChatMessage(messageObj) {
-        const { from, body } = messageObj;
-        const newMessage = document.createElement('div');
-        newMessage.textContent = `${from}: ${body}`;
-        chatbox.appendChild(newMessage);
-        chatbox.scrollTop = chatbox.scrollHeight;
+function displayChatMessage(messageObj, color = 'black') {
+    const { from, body, role } = messageObj;
+    const newMessage = document.createElement('div');
+
+    if (from) {
+        const coloredFrom = document.createElement('span');
+        coloredFrom.textContent = `${from}: `;
+        coloredFrom.style.color = getRoleColor(role);
+        newMessage.appendChild(coloredFrom);
     }
+
+    const messageBody = document.createElement('span');
+    messageBody.textContent = body;
+    messageBody.style.color = color;
+
+    newMessage.appendChild(messageBody);
+    chatbox.appendChild(newMessage);
+    chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+function displayRoomSubject(subject) {
+    const newMessage = document.createElement('div');
+    newMessage.innerHTML = subject;
+    chatbox.appendChild(newMessage);
+    chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+function getRoleColor(role) {
+    switch (role) {
+        case 'creator':
+            return 'red';
+        case 'owner':
+            return 'blue';
+        case 'admin':
+            return 'purple';
+        case 'member':
+            return 'black';
+        default:
+            return 'grey';
+    }
+}
+
+
+function getRoleChangeColor(newRole) {
+    switch (newRole) {
+        case 'kick':
+            return 'red';
+        case 'outcast':
+            return 'orange';
+        case 'member':
+        case 'admin':
+        case 'owner':
+            return 'blue';
+        default:
+            return 'black';
+    }
+}
+
+   
 
     async function kickUser(username) {
         const kickMessage = {
@@ -372,6 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sortedUsers.forEach(user => {
             const option = document.createElement('option');
             option.textContent = `${user.username} (${user.role})`;
+            option.style.color = getRoleColor(user.role);  // Apply color based on role
             userListbox.appendChild(option);
         });
     }
