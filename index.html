@@ -104,7 +104,13 @@
                     <div id="count"></div>
                 </div>
             </div>
-
+ <div>
+    <input type="text" id="master" placeholder="Type your master username here...">
+                <label for="welcomeCheckbox">Send Welcome Messages</label>
+                <input type="checkbox" id="welcomeCheckbox">
+        <label for="spinCheckbox">Spin</label>
+                <input type="checkbox" id="spinCheckbox">
+            </div>
             <div class="chat-container">
                 <div id="chatbox"></div>
                 <div class="user-list">
@@ -116,16 +122,18 @@
             <div class="chat-controls">
                 <input type="text" id="message" placeholder="Type your message here...">
                 <button id="sendMessageButton">Send Message</button>
-                <input type="text" id="target" placeholder="Type your target username here...">
+           
+            
+            </div>
+<div>
+     <input type="text" id="target" placeholder="Type your target username here...">
                 <button id="banButton">Ban</button>
                 <button id="kickButton">Kick</button>
                 <button id="memButton">Member</button>
                 <button id="adminButton">Admin</button>
                 <button id="ownerButton">Owner</button>
                 <button id="noneButton">None</button>
-                <input type="text" id="master" placeholder="Type your master username here...">
-            </div>
-
+</div>
            <div id="emojiList">
         <!-- Smileys & People -->
         <span class="emoji-item">😀</span>
@@ -397,17 +405,7 @@
         <!-- Add more emojis as needed -->
     </div>
 
-            <div>
-                <input type="text" id="searchTerm">
-                <button id="searchImageButton">Search Image</button>
-                <img id="imageResult" alt="Image Result">
-            </div>
-
-            <div>
-                <label for="welcomeCheckbox">Send Welcome Messages</label>
-                <input type="checkbox" id="welcomeCheckbox">
-            </div>
-
+       
             <div>
                 <label for="debugBox">Debug Messages:</label>
                 <textarea id="debugBox" rows="10" cols="50" readonly></textarea>
