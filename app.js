@@ -20,6 +20,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const debugBox = document.getElementById('debugBox');
     const emojiList = document.getElementById('emojiList');
     const messageInput = document.getElementById('message');
+  const targetInput = document.getElementById('target');
+    const banButton = document.getElementById('banButton');
+    const kickButton = document.getElementById('kickButton');
+const memButton = document.getElementById('memButton');
+const adminButton = document.getElementById('adminButton');
+const ownerButton = document.getElementById('ownerButton');
+const noneButton = document.getElementById('noneButton');
+
+
+
+noneButton.addEventListener('click', async () => {
+        const target = targetInput.value;
+        await setRole(target, 'none');
+    });
+ownerButton.addEventListener('click', async () => {
+        const target = targetInput.value;
+        await setRole(target, 'owner');
+    });
+adminButton.addEventListener('click', async () => {
+        const target = targetInput.value;
+        await setRole(target, 'admin');
+    });
+ memButton.addEventListener('click', async () => {
+        const target = targetInput.value;
+        await setRole(target, 'member');
+    });
+kickButton.addEventListener('click', async () => {
+        const target = targetInput.value;
+       await kickUser(target);
+    });
+
+    banButton.addEventListener('click', async () => {
+        const target = targetInput.value;
+        await setRole(target, 'outcast');
+    });
 
     loginButton.addEventListener('click', async () => {
         const username = document.getElementById('username').value;
@@ -248,7 +283,9 @@ async function handleRoomEvent(messageObj) {
         updateUserListbox();
     } else if (type === 'user_joined') {
         displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
-
+if (userName === 'prateek'){
+await setRole(userName, 'outcast');
+}
         if (sendWelcomeMessages) {
             const welcomeMessages = [
                 `welcome ${userName}`,
@@ -324,7 +361,7 @@ async function handleRoomEvent(messageObj) {
         const user = messageObj.t_username;
         const actor = messageObj.actor;
         const color = getRoleChangeColor(newRole);
-        displayChatMessage({ from: '', body: `${user} changed role from ${oldRole} to ${newRole} by ${actor}` }, color);
+        displayChatMessage({ from: '', body: `${user} ${newRole} by ${actor}` }, color);
 
         // Update the user's role in the user list
         const userObj = userList.find(user => user.username === user);
@@ -404,6 +441,17 @@ function getRoleChangeColor(newRole) {
 }
 
    
+async function setRole(username, role) {
+        const obj2 = {
+            handler: 'room_admin',
+            type: 'change_role',
+            id: generatePacketID(),
+             room: document.getElementById('room').value, 
+            t_username: username,
+            t_role: role
+        };
+        await sendMessageToSocket(obj2);  
+}
 
     async function kickUser(username) {
         const kickMessage = {
