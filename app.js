@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
     const roomListbox = document.getElementById('roomListbox');
-    const userListbox = document.getElementById('userListbox');
+     const usernameInput = document.getElementById('username');
+ const userListbox = document.getElementById('userListbox');
     const debugBox = document.getElementById('debugBox');
     const emojiList = document.getElementById('emojiList');
     const messageInput = document.getElementById('message');
@@ -73,10 +74,42 @@ kickButton.addEventListener('click', async () => {
         await leaveRoom(room);
     });
 
-    sendMessageButton.addEventListener('click', async () => {
+    sendMessageButton.addEventListener('click', () => {
         const message = messageInput.value;
-        await sendMessage(message);
+        const username = usernameInput.value;
+        const avatarUrl = 'https://via.placeholder.com/50'; // Replace with dynamic URL if available
+
+        if (message && username) {
+            addMessageToChatbox(username, message, avatarUrl);
+            messageInput.value = '';
+        }
     });
+
+
+   function addMessageToChatbox(username, message, avatarUrl) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+
+        const avatarElement = document.createElement('img');
+        avatarElement.classList.add('avatar');
+        avatarElement.src = avatarUrl;
+
+        const usernameElement = document.createElement('span');
+        usernameElement.classList.add('username');
+        usernameElement.textContent = username;
+
+        const textElement = document.createElement('span');
+        textElement.classList.add('text');
+        textElement.textContent = message;
+
+        messageElement.appendChild(avatarElement);
+        messageElement.appendChild(usernameElement);
+        messageElement.appendChild(textElement);
+
+        chatbox.appendChild(messageElement);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
 
     searchImageButton.addEventListener('click', async () => {
         const searchTerm = document.getElementById('searchTerm').value;
@@ -212,52 +245,52 @@ kickButton.addEventListener('click', async () => {
         return packetIdNum.toString();
     }
 
-    function processReceivedMessage(message) {
-        console.log('Received message:', message);
-        debugBox.value += `${message}\n`;
+  function processReceivedMessage(message) {
+    console.log('Received message:', message);
+    debugBox.value += `${message}\n`;
 
-        try {
-            const jsonDict = JSON.parse(message);
+    try {
+        const jsonDict = JSON.parse(message);
 
-            if (jsonDict) {
-                const handler = jsonDict.handler;
+        if (jsonDict) {
+            const handler = jsonDict.handler;
 
-                if (handler === 'login_event') {
-                    handleLoginEvent(jsonDict);
-                } else if (handler === 'room_event') {
-                    handleRoomEvent(jsonDict);
-                } else if (handler === 'chat_message') {
-                    displayChatMessage(jsonDict);
-                } else if (handler === 'presence') {
-                    onUserProfileUpdates(jsonDict);
-                } else if (handler === 'group_invite') {
-                    onMucInvitation(jsonDict.inviter, jsonDict.name, 'private');
-                } else if (handler === 'user_online' || handler === 'user_offline') {
-                    onUserPresence(jsonDict);
-                } else if (handler === 'muc_event') {
-                    handleMucEvent(jsonDict);
-                } else if (handler === 'last_activity') {
-                    onUserActivityResult(jsonDict);
-                } else if (handler === 'roster') {
-                    onRoster(jsonDict);
-                } else if (handler === 'friend_requests') {
-                    onFriendRequest(jsonDict);
-                } else if (handler === 'register_event') {
-                    handleRegisterEvent(jsonDict);
-                } else if (handler === 'profile_other') {
-                    onGetUserProfile(jsonDict);
-                } else if (handler === 'followers_event') {
-                    onFollowersList(jsonDict);
-                } else if (handler === 'add_buddy') {
-                    onAddBuddy(jsonDict);
-                } else {
-                    console.log('Unknown handler:', handler);
-                }
+            if (handler === 'login_event') {
+                handleLoginEvent(jsonDict);
+            } else if (handler === 'room_event') {
+                handleRoomEvent(jsonDict);
+            } else if (handler === 'chat_message') {
+                   displayChatMessage(jsonDict);
+            } else if (handler === 'presence') {
+                onUserProfileUpdates(jsonDict);
+            } else if (handler === 'group_invite') {
+                onMucInvitation(jsonDict.inviter, jsonDict.name, 'private');
+            } else if (handler === 'user_online' || handler === 'user_offline') {
+                onUserPresence(jsonDict);
+            } else if (handler === 'muc_event') {
+                handleMucEvent(jsonDict);
+            } else if (handler === 'last_activity') {
+                onUserActivityResult(jsonDict);
+            } else if (handler === 'roster') {
+                onRoster(jsonDict);
+            } else if (handler === 'friend_requests') {
+                onFriendRequest(jsonDict);
+            } else if (handler === 'register_event') {
+                handleRegisterEvent(jsonDict);
+            } else if (handler === 'profile_other') {
+                onGetUserProfile(jsonDict);
+            } else if (handler === 'followers_event') {
+                onFollowersList(jsonDict);
+            } else if (handler === 'add_buddy') {
+                onAddBuddy(jsonDict);
+            } else {
+                console.log('Unknown handler:', handler);
             }
-        } catch (ex) {
-            console.error('Error processing received message:', ex);
         }
+    } catch (ex) {
+        console.error('Error processing received message:', ex);
     }
+}
 
 async function handleRoomEvent(messageObj) {
     const type = messageObj.type;
@@ -316,8 +349,14 @@ await setRole(userName, 'outcast');
     } else if (type === 'text') {
         const body = messageObj.body;
         const from = messageObj.from;
-        displayChatMessage({ from, body, role: messageObj.role });
-
+    const avatar = messageObj.avatar_url;
+       // displayChatMessage({ from, body, role: messageObj.role });
+ displayChatMessage({
+                    from: messageObj.from,
+                    body: messageObj.body,
+                    role: messageObj.role,
+                    avatar: messageObj.avatar_url  // Pass avatar URL here
+                });
         // Check for special spin command
         if (body === '.s') {
             const responses = [
@@ -388,13 +427,28 @@ if (masterInput.value ===from){
 }
 
 function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, role } = messageObj;
+    const { from, body, role, avatar } = messageObj;
     const newMessage = document.createElement('div');
+    newMessage.style.display = 'flex';
+    newMessage.style.alignItems = 'center';
+    newMessage.style.marginBottom = '10px';
+
+    if (avatar) {
+        const avatarImg = document.createElement('img');
+        avatarImg.src = avatar;
+        avatarImg.alt = `${from}'s avatar`;
+        avatarImg.style.width = '40px';
+        avatarImg.style.height = '40px';
+        avatarImg.style.borderRadius = '50%';
+        avatarImg.style.marginRight = '10px';
+        newMessage.appendChild(avatarImg);
+    }
 
     if (from) {
         const coloredFrom = document.createElement('span');
         coloredFrom.textContent = `${from}: `;
         coloredFrom.style.color = getRoleColor(role);
+        coloredFrom.style.fontWeight = 'bold';
         newMessage.appendChild(coloredFrom);
     }
 
@@ -406,6 +460,7 @@ function displayChatMessage(messageObj, color = 'black') {
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
+
 
 function displayRoomSubject(subject) {
     const newMessage = document.createElement('div');
