@@ -74,15 +74,9 @@ kickButton.addEventListener('click', async () => {
         await leaveRoom(room);
     });
 
-    sendMessageButton.addEventListener('click', () => {
+     sendMessageButton.addEventListener('click', async () => {
         const message = messageInput.value;
-        const username = usernameInput.value;
-        const avatarUrl = 'https://via.placeholder.com/50'; // Replace with dynamic URL if available
-
-        if (message && username) {
-            addMessageToChatbox(username, message, avatarUrl);
-            messageInput.value = '';
-        }
+        await sendMessage(message);
     });
 
 
