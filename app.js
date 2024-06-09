@@ -27,7 +27,7 @@ const memButton = document.getElementById('memButton');
 const adminButton = document.getElementById('adminButton');
 const ownerButton = document.getElementById('ownerButton');
 const noneButton = document.getElementById('noneButton');
-
+ const masterInput = document.getElementById('master');
 
 
 noneButton.addEventListener('click', async () => {
@@ -347,13 +347,18 @@ await setRole(userName, 'outcast');
                 await sendMessage(randomResponse);
             }
         } else if (body === '+wc') {
+if (masterInput.value ===from){
+
             welcomeCheckbox.checked = true;
             sendWelcomeMessages = true;
             await sendMessage('Welcome messages activated.');
+}
         } else if (body === '-wc') {
+if (masterInput.value ===from){
             welcomeCheckbox.checked = false;
             sendWelcomeMessages = false;
             await sendMessage('Welcome messages deactivated.');
+}
         }
      } else if (type === 'role_changed') {
         const oldRole = messageObj.old_role;
