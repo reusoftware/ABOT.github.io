@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
-    let socket;
+   document.addEventListener('DOMContentLoaded', () => {
+ let socket;
     let isConnected = false;
     let packetIdNum = 0;
     let sendWelcomeMessages = false;
@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const joinRoomButton = document.getElementById('joinRoomButton');
     const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
+ const sendCaptchaButton = document.getElementById('sendCaptchaButton');
     const statusDiv = document.getElementById('status');
     const statusCount = document.getElementById('count');
     const chatbox = document.getElementById('chatbox');
@@ -29,6 +30,8 @@ const adminButton = document.getElementById('adminButton');
 const ownerButton = document.getElementById('ownerButton');
 const noneButton = document.getElementById('noneButton');
  const masterInput = document.getElementById('master');
+
+   const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
 
 
 noneButton.addEventListener('click', async () => {
@@ -78,7 +81,14 @@ kickButton.addEventListener('click', async () => {
         const message = messageInput.value;
         await sendMessage(message);
     });
+   sendCaptchaButton.addEventListener('click', async () => {
+      // Retrieve captcha code and URL from input fields
+    const messageInput = document.getElementById('messageInput').value;
+    const captchaUrl = document.getElementById('captchaUrl').value;
 
+    // Call the sendCaptcha function with the retrieved values
+    await sendCaptcha(captchaCode, captchaUrl);
+    });
 
    function addMessageToChatbox(username, message, avatarUrl) {
         const messageElement = document.createElement('div');
@@ -209,6 +219,25 @@ spinCheckbox.addEventListener('change', () => {
             statusDiv.textContent = 'Not connected to server';
         }
     }
+
+async function sendCaptcha(captcha, captchaUrl) {
+    if (isConnected) {
+        const messageData = {
+            handler: 'room_join_captcha',
+            id: generatePacketID(),  // Assuming generatePacketID() is a function that generates a unique packet ID
+            name: document.getElementById('room').value, // Assuming 'name' should be the room's name
+            password: '',  // Empty password
+            c_code: captcha,  // The captcha code
+            c_id: '',  // Empty captcha ID
+            captcha_url: captchaUrl  // The captcha URL
+        };
+
+        await sendMessageToSocket(messageData);
+    } else {
+        statusDiv.textContent = 'Not connected to server';
+    }
+}
+
 
     async function sendMessageToSocket(message) {
         return new Promise((resolve, reject) => {
@@ -396,7 +425,40 @@ if (masterInput.value ===from){
             await sendMessage('Spin Deactivated.');
 }
         }
-     } else if (type === 'role_changed') {
+
+ } else if (type === 'image') {
+      const bodyurl = messageObj.url;
+        const from = messageObj.from;
+    const avatar = messageObj.avatar_url;
+       // displayChatMessage({ from, body, role: messageObj.role });
+ displayChatMessage({
+                    from: messageObj.from,
+                    bodyurl: messageObj.url,
+                    role: messageObj.role,
+                    avatar: messageObj.avatar_url  // Pass avatar URL here
+                });
+
+} else // Assuming this part of the code is inside your processReceivedMessage function
+if (type === 'room_needs_captcha') {
+    const captchaUrl = messageObj.captcha_url;
+
+    // Create a new image element
+    const captchaImg = document.createElement('img');
+    captchaImg.src = captchaUrl;
+    captchaImg.style.maxWidth = '200px'; // Set maximum width for the image (adjust as needed)
+
+    // Append the image element to the chatbox
+    chatbox.appendChild(captchaImg);
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+    // Optionally, display the URL as text
+    const captchaText = document.createElement('span');
+    captchaText.textContent = 'Captcha URL: ' + captchaUrl;
+
+    // Append the text element to the chatbox
+    chatbox.appendChild(captchaText);
+}
+ else if (type === 'role_changed') {
         const oldRole = messageObj.old_role;
         const newRole = messageObj.new_role;
         const user = messageObj.t_username;
@@ -424,7 +486,7 @@ if (masterInput.value ===from){
 }
 
 function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, role, avatar } = messageObj;
+    const { from, body, bodyurl, role, avatar } = messageObj;
     const newMessage = document.createElement('div');
     newMessage.style.display = 'flex';
     newMessage.style.alignItems = 'center';
@@ -449,11 +511,20 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(coloredFrom);
     }
 
-    const messageBody = document.createElement('span');
-    messageBody.textContent = body;
-    messageBody.style.color = color;
+    if (bodyurl) {
+        // If the message contains an image URL, create an image element
+        const imageElement = document.createElement('img');
+        imageElement.src = bodyurl;
+        imageElement.style.maxWidth = '200px'; // Set maximum width for the image
+        newMessage.appendChild(imageElement);
+    } else {
+        // If it's a regular text message, create a span element
+        const messageBody = document.createElement('span');
+        messageBody.textContent = body;
+        messageBody.style.color = color;
+        newMessage.appendChild(messageBody);
+    }
 
-    newMessage.appendChild(messageBody);
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
@@ -522,19 +593,133 @@ async function setRole(username, role) {
         await sendMessageToSocket(kickMessage);
     }
 
-    function updateUserListbox() {
-        userListbox.innerHTML = '';
+ function updateUserListbox() {
+    userListbox.innerHTML = '';
 
-        const sortedUsers = userList.sort((a, b) => {
-            const roles = ['creator', 'owner', 'admin', 'member', 'none'];
-            return roles.indexOf(a.role) - roles.indexOf(b.role);
-        });
+    const sortedUsers = userList.sort((a, b) => {
+        const roles = ['creator', 'owner', 'admin', 'member', 'none'];
+        return roles.indexOf(a.role) - roles.indexOf(b.role);
+    });
 
-        sortedUsers.forEach(user => {
-            const option = document.createElement('option');
-            option.textContent = `${user.username} (${user.role})`;
-            option.style.color = getRoleColor(user.role);  // Apply color based on role
-            userListbox.appendChild(option);
-        });
+    sortedUsers.forEach(user => {
+        // Create and append the avatar image
+        const avatarImg = document.createElement('img');
+        avatarImg.src = user.avatar; // Set the src attribute to the user's avatar URL
+        avatarImg.alt = `${user.username}'s avatar`;
+        avatarImg.style.width = '20px'; // Adjust the width of the avatar as needed
+        avatarImg.style.height = '20px'; // Adjust the height of the avatar as needed
+
+        // Create and append the option element
+        const option = document.createElement('option');
+        option.appendChild(avatarImg); // Append the avatar image
+        option.appendChild(document.createTextNode(`${user.username} (${user.role})`)); // Append the username and role
+        option.style.color = getRoleColor(user.role);  // Apply color based on role
+
+        userListbox.appendChild(option);
+    });
+}
+
+
+
+
+
+// Function to activate the quiz
+function activateQuiz() {
+    // Add your quiz activation logic here
+    console.log('Quiz activated');
+}
+
+// Function to deactivate the quiz
+function deactivateQuiz() {
+    // Add your quiz deactivation logic here
+    console.log('Quiz deactivated');
+}
+
+// Event listener for the activate quiz checkbox
+document.getElementById('activateQuizCheckbox').addEventListener('change', function() {
+    if (this.checked) {
+        activateQuiz();
     }
+});
+
+// Event listener for the deactivate quiz checkbox
+document.getElementById('deactivateQuizCheckbox').addEventListener('change', function() {
+    if (this.checked) {
+        deactivateQuiz();
+    }
+});
+
+
+const quizQuestions = [
+    {
+        question: "What is the capital of France?",
+        options: ["Paris", "London", "Berlin", "Rome"],
+        answer: "Paris"
+    },
+    {
+        question: "Who painted the Mona Lisa?",
+        options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
+        answer: "Leonardo da Vinci"
+    }
+];
+
+
+async function startQuiz() {
+    for (let i = 0; i < quizQuestions.length; i++) {
+        const questionObj = quizQuestions[i];
+        const question = questionObj.question;
+        const options = questionObj.options;
+        const answer = questionObj.answer;
+
+        // Post the question to the chatroom
+        const message = `${question}\n${options.join('\n')}`;
+        await sendMessage(message);
+
+        // Wait for the user's response
+        let userAnswer;
+        do {
+            userAnswer = prompt(question + "\n" + options.join("\n"));
+            if (userAnswer === null) return; // Handle cancel button press
+            userAnswer = userAnswer.trim();
+        } while (!options.includes(userAnswer));
+
+        // Check the user's answer
+        if (userAnswer.toLowerCase() === answer.toLowerCase()) {
+            // If the answer is correct, notify the user
+            await sendMessage("Correct!");
+        } else {
+            // If the answer is incorrect, provide the correct answer
+            await sendMessage(`Incorrect! The correct answer is: ${answer}`);
+        }
+    }
+}
+
+
+
+function checkAnswer(userAnswer, correctAnswer) {
+    if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+        alert("Correct!");
+    } else {
+        alert("Incorrect! The correct answer is: " + correctAnswer);
+    }
+}
+
+ document.getElementById('activateQuizCheckbox').addEventListener('change', async function() {
+        if (this.checked) {
+            await startQuiz();
+        }
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
