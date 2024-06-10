@@ -289,7 +289,7 @@ async function chat(to, body) {
             } else if (handler === 'room_event') {
                 handleRoomEvent(jsonDict);
             } else if (handler === 'chat_message') {
-                   displayChatMessage(jsonDict);
+                 //  displayChatMessage(jsonDict);
             } else if (handler === 'presence') {
                 onUserProfileUpdates(jsonDict);
             } else if (handler === 'group_invite') {
