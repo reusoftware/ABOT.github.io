@@ -433,7 +433,7 @@ async function handleRoomEvent(messageObj) {
 
 
 function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, role, avatar } = messageObj;
+    const { from, body, bodyurl, role, avatar } = messageObj;
     const newMessage = document.createElement('div');
     newMessage.style.display = 'flex';
     newMessage.style.alignItems = 'center';
@@ -458,15 +458,14 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(coloredFrom);
     }
 
-    // Check if the body is an image URL
-    if (isImageUrl(body)) {
+    if (bodyurl) {
+        // If the message contains an image URL, create an image element
         const imageElement = document.createElement('img');
-        imageElement.src = body;
-        imageElement.alt = 'Image';
-        imageElement.style.maxWidth = '300px';  // Adjust size as needed
-        imageElement.style.borderRadius = '10px';
+        imageElement.src = bodyurl;
+        imageElement.style.maxWidth = '200px'; // Set maximum width for the image
         newMessage.appendChild(imageElement);
     } else {
+        // If it's a regular text message, create a span element
         const messageBody = document.createElement('span');
         messageBody.textContent = body;
         messageBody.style.color = color;
@@ -476,7 +475,6 @@ function displayChatMessage(messageObj, color = 'black') {
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
-
 // Helper function to check if a string is a valid image URL
 function isImageUrl(url) {
     return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
