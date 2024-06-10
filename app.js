@@ -431,36 +431,55 @@ async function handleRoomEvent(messageObj) {
 }
 
 function displayChatMessage(jsonDict) {
-    const { sender, body, type, username, name, url } = jsonDict;
+    cfunction displayChatMessage(jsonDict) {
+    const { from, body, type, avatar_url, url } = jsonDict;
 
     const chatMessageDiv = document.createElement('div');
     chatMessageDiv.classList.add('chat-message');
+    chatMessageDiv.style.display = 'flex';
+    chatMessageDiv.style.alignItems = 'center';
+    chatMessageDiv.style.marginBottom = '10px';
+
+    if (avatar_url) {
+        const avatarImg = document.createElement('img');
+        avatarImg.src = avatar_url;
+        avatarImg.alt = `${from}'s avatar`;
+        avatarImg.style.width = '40px';
+        avatarImg.style.height = '40px';
+        avatarImg.style.borderRadius = '50%';
+        avatarImg.style.marginRight = '10px';
+        chatMessageDiv.appendChild(avatarImg);
+    }
 
     const usernameSpan = document.createElement('span');
     usernameSpan.classList.add('username');
-    usernameSpan.textContent = sender || username;
+    usernameSpan.style.fontWeight = 'bold';
+    usernameSpan.style.marginRight = '10px';
+    usernameSpan.textContent = from;
     chatMessageDiv.appendChild(usernameSpan);
 
-    const messageSpan = document.createElement('span');
-    messageSpan.classList.add('message');
-
-    if (type === 'image' || (body && isImageUrl(body))) {
+    if (type === 'image' && url) {
         const img = document.createElement('img');
-        img.src = url || body;
+        img.src = url;
         img.alt = 'Image';
-        messageSpan.appendChild(img);
+        img.style.maxWidth = '300px'; // Adjust size as needed
+        img.style.borderRadius = '10px';
+        chatMessageDiv.appendChild(img);
     } else {
+        const messageSpan = document.createElement('span');
+        messageSpan.classList.add('message');
         messageSpan.textContent = body;
+        chatMessageDiv.appendChild(messageSpan);
     }
 
-    chatMessageDiv.appendChild(messageSpan);
     chatbox.appendChild(chatMessageDiv);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
 
 function isImageUrl(url) {
-    return (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
 }
+
 
 
 
