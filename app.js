@@ -1,4 +1,4 @@
-('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     let socket;
     let isConnected = false;
     let packetIdNum = 0;
@@ -10,11 +10,11 @@
     const joinRoomButton = document.getElementById('joinRoomButton');
     const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
-    const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
     const statusCount = document.getElementById('count');
     const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
+   const spinCheckbox = document.getElementById('spinCheckbox');
     const roomListbox = document.getElementById('roomListbox');
      const usernameInput = document.getElementById('username');
  const userListbox = document.getElementById('userListbox');
@@ -74,15 +74,9 @@ kickButton.addEventListener('click', async () => {
         await leaveRoom(room);
     });
 
-    sendMessageButton.addEventListener('click', () => {
+     sendMessageButton.addEventListener('click', async () => {
         const message = messageInput.value;
-        const username = usernameInput.value;
-        const avatarUrl = 'https://via.placeholder.com/50'; // Replace with dynamic URL if available
-
-        if (message && username) {
-            addMessageToChatbox(username, message, avatarUrl);
-            messageInput.value = '';
-        }
+        await sendMessage(message);
     });
 
 
@@ -111,15 +105,13 @@ kickButton.addEventListener('click', async () => {
     }
 
 
-    searchImageButton.addEventListener('click', async () => {
-        const searchTerm = document.getElementById('searchTerm').value;
-        await searchImage(searchTerm);
-    });
-
+  
     welcomeCheckbox.addEventListener('change', () => {
         sendWelcomeMessages = welcomeCheckbox.checked;
     });
-
+spinCheckbox.addEventListener('change', () => {
+        sendspinMessages = spinCheckbox.checked;
+    });
     roomListbox.addEventListener('change', async () => {
         const selectedRoom = roomListbox.value;
         if (selectedRoom) {
@@ -229,16 +221,7 @@ kickButton.addEventListener('click', async () => {
         });
     }
 
-    async function searchImage(searchTerm) {
-        const apiKey = 'YOUR_PIXABAY_API_KEY';  // Replace with your Pixabay API key
-        const response = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(searchTerm)}&image_type=photo`);
-        const data = await response.json();
-        if (data.hits && data.hits.length > 0) {
-            const imageUrl = data.hits[0].webformatURL;
-            const imageResult = document.getElementById('imageResult');
-            imageResult.src = imageUrl;
-        }
-    }
+
 
     function generatePacketID() {
         packetIdNum += 1;
@@ -358,6 +341,7 @@ await setRole(userName, 'outcast');
                     avatar: messageObj.avatar_url  // Pass avatar URL here
                 });
         // Check for special spin command
+if (sendspinMessages) {
         if (body === '.s') {
             const responses = [
                 `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
@@ -385,6 +369,7 @@ await setRole(userName, 'outcast');
             } else {
                 await sendMessage(randomResponse);
             }
+}
         } else if (body === '+wc') {
 if (masterInput.value ===from){
 
@@ -397,6 +382,18 @@ if (masterInput.value ===from){
             welcomeCheckbox.checked = false;
             sendWelcomeMessages = false;
             await sendMessage('Welcome messages deactivated.');
+}
+}else if (body === '+spin') {
+if (masterInput.value ===from){
+           spinCheckbox.checked = true;
+            sendspinMessages = false;
+            await sendMessage('Spin Activated.');
+}
+}else if (body === '-spin') {
+if (masterInput.value ===from){
+            spinCheckbox.checked = false;
+            sendspinMessages = false;
+            await sendMessage('Spin Deactivated.');
 }
         }
      } else if (type === 'role_changed') {
