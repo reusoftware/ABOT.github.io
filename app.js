@@ -432,54 +432,30 @@ async function handleRoomEvent(messageObj) {
 
 
 
-function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, bodyurl, role, avatar } = messageObj;
-    const newMessage = document.createElement('div');
-    newMessage.style.display = 'flex';
-    newMessage.style.alignItems = 'center';
-    newMessage.style.marginBottom = '10px';
+   function displayChatMessage(from, message, role, avatarUrl) {
+        console.log('Displaying message from:', from);
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
 
-    if (avatar) {
-        const avatarImg = document.createElement('img');
-        avatarImg.src = avatar;
-        avatarImg.alt = `${from}'s avatar`;
-        avatarImg.style.width = '40px';
-        avatarImg.style.height = '40px';
-        avatarImg.style.borderRadius = '50%';
-        avatarImg.style.marginRight = '10px';
-        newMessage.appendChild(avatarImg);
+        const avatarElement = document.createElement('img');
+        avatarElement.classList.add('avatar');
+        avatarElement.src = avatarUrl;
+
+        const usernameElement = document.createElement('span');
+        usernameElement.classList.add('username');
+        usernameElement.textContent = `${from} (${role})`;
+
+        const textElement = document.createElement('span');
+        textElement.classList.add('text');
+        textElement.textContent = message;
+
+        messageElement.appendChild(avatarElement);
+        messageElement.appendChild(usernameElement);
+        messageElement.appendChild(textElement);
+
+        chatbox.appendChild(messageElement);
+        chatbox.scrollTop = chatbox.scrollHeight;
     }
-
-    if (from) {
-        const coloredFrom = document.createElement('span');
-        coloredFrom.textContent = `${from}: `;
-        coloredFrom.style.color = getRoleColor(role);
-        coloredFrom.style.fontWeight = 'bold';
-        newMessage.appendChild(coloredFrom);
-    }
-
-    if (bodyurl) {
-        // If the message contains an image URL, create an image element
-        const imageElement = document.createElement('img');
-        imageElement.src = bodyurl;
-        imageElement.style.maxWidth = '200px'; // Set maximum width for the image
-        newMessage.appendChild(imageElement);
-    } else {
-        // If it's a regular text message, create a span element
-        const messageBody = document.createElement('span');
-        messageBody.textContent = body;
-        messageBody.style.color = color;
-        newMessage.appendChild(messageBody);
-    }
-
-    chatbox.appendChild(newMessage);
-    chatbox.scrollTop = chatbox.scrollHeight;
-}
-// Helper function to check if a string is a valid image URL
-function isImageUrl(url) {
-    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
-}
-
 
 
 function displayRoomSubject(subject) {
