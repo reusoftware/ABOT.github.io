@@ -432,50 +432,38 @@ async function handleRoomEvent(messageObj) {
 
 
 
-function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, role, avatar } = messageObj;
-    const newMessage = document.createElement('div');
-    newMessage.style.display = 'flex';
-    newMessage.style.alignItems = 'center';
-    newMessage.style.marginBottom = '10px';
+function displayChatMessage(jsonDict) {
+    const { sender, body, type, username, name, url } = jsonDict;
 
-    if (avatar) {
-        const avatarImg = document.createElement('img');
-        avatarImg.src = avatar;
-        avatarImg.alt = `${from}'s avatar`;
-        avatarImg.style.width = '40px';
-        avatarImg.style.height = '40px';
-        avatarImg.style.borderRadius = '50%';
-        avatarImg.style.marginRight = '10px';
-        newMessage.appendChild(avatarImg);
-    }
+    const chatMessageDiv = document.createElement('div');
+    chatMessageDiv.classList.add('chat-message');
 
-    if (from) {
-        const coloredFrom = document.createElement('span');
-        coloredFrom.textContent = `${from}: `;
-        coloredFrom.style.color = getRoleColor(role);
-        coloredFrom.style.fontWeight = 'bold';
-        newMessage.appendChild(coloredFrom);
-    }
+    const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('username');
+    usernameSpan.textContent = sender || username;
+    chatMessageDiv.appendChild(usernameSpan);
 
-    // Check if the body is an image URL
-    if (isImageUrl(body)) {
-        const imageElement = document.createElement('img');
-        imageElement.src = body;
-        imageElement.alt = 'Image';
-        imageElement.style.maxWidth = '300px';  // Adjust size as needed
-        imageElement.style.borderRadius = '10px';
-        newMessage.appendChild(imageElement);
+    const messageSpan = document.createElement('span');
+    messageSpan.classList.add('message');
+
+    if (type === 'image' || (body && isImageUrl(body))) {
+        const img = document.createElement('img');
+        img.src = url || body;
+        img.alt = 'Image';
+        messageSpan.appendChild(img);
     } else {
-        const messageBody = document.createElement('span');
-        messageBody.textContent = body;
-        messageBody.style.color = color;
-        newMessage.appendChild(messageBody);
+        messageSpan.textContent = body;
     }
 
-    chatbox.appendChild(newMessage);
+    chatMessageDiv.appendChild(messageSpan);
+    chatbox.appendChild(chatMessageDiv);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
+
+function isImageUrl(url) {
+    return (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+}
+
 
 // Helper function to check if a string is a valid image URL
 function isImageUrl(url) {
