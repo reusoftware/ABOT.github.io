@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+('DOMContentLoaded', () => {
     let socket;
     let isConnected = false;
     let packetIdNum = 0;
@@ -10,11 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const joinRoomButton = document.getElementById('joinRoomButton');
     const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
+    const searchImageButton = document.getElementById('searchImageButton');
     const statusDiv = document.getElementById('status');
     const statusCount = document.getElementById('count');
     const chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
-   const spinCheckbox = document.getElementById('spinCheckbox');
     const roomListbox = document.getElementById('roomListbox');
      const usernameInput = document.getElementById('username');
  const userListbox = document.getElementById('userListbox');
@@ -74,9 +74,15 @@ kickButton.addEventListener('click', async () => {
         await leaveRoom(room);
     });
 
-     sendMessageButton.addEventListener('click', async () => {
+    sendMessageButton.addEventListener('click', () => {
         const message = messageInput.value;
-        await sendMessage(message);
+        const username = usernameInput.value;
+        const avatarUrl = 'https://via.placeholder.com/50'; // Replace with dynamic URL if available
+
+        if (message && username) {
+            addMessageToChatbox(username, message, avatarUrl);
+            messageInput.value = '';
+        }
     });
 
 
@@ -105,13 +111,15 @@ kickButton.addEventListener('click', async () => {
     }
 
 
-  
+    searchImageButton.addEventListener('click', async () => {
+        const searchTerm = document.getElementById('searchTerm').value;
+        await searchImage(searchTerm);
+    });
+
     welcomeCheckbox.addEventListener('change', () => {
         sendWelcomeMessages = welcomeCheckbox.checked;
     });
-spinCheckbox.addEventListener('change', () => {
-        sendspinMessages = spinCheckbox.checked;
-    });
+
     roomListbox.addEventListener('change', async () => {
         const selectedRoom = roomListbox.value;
         if (selectedRoom) {
@@ -221,7 +229,16 @@ spinCheckbox.addEventListener('change', () => {
         });
     }
 
-
+    async function searchImage(searchTerm) {
+        const apiKey = 'YOUR_PIXABAY_API_KEY';  // Replace with your Pixabay API key
+        const response = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(searchTerm)}&image_type=photo`);
+        const data = await response.json();
+        if (data.hits && data.hits.length > 0) {
+            const imageUrl = data.hits[0].webformatURL;
+            const imageResult = document.getElementById('imageResult');
+            imageResult.src = imageUrl;
+        }
+    }
 
     function generatePacketID() {
         packetIdNum += 1;
@@ -274,6 +291,7 @@ spinCheckbox.addEventListener('change', () => {
         console.error('Error processing received message:', ex);
     }
 }
+
 async function handleRoomEvent(messageObj) {
     const type = messageObj.type;
     const userName = messageObj.username || 'Unknown';
@@ -298,9 +316,9 @@ async function handleRoomEvent(messageObj) {
         updateUserListbox();
     } else if (type === 'user_joined') {
         displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
-        if (userName === 'prateek'){
-            await setRole(userName, 'outcast');
-        }
+if (userName === 'prateek'){
+await setRole(userName, 'outcast');
+}
         if (sendWelcomeMessages) {
             const welcomeMessages = [
                 `welcome ${userName}`,
@@ -331,79 +349,57 @@ async function handleRoomEvent(messageObj) {
     } else if (type === 'text') {
         const body = messageObj.body;
         const from = messageObj.from;
-        const avatar = messageObj.avatar_url;
-        displayChatMessage({
-            from,
-            body,
-            role: messageObj.role,
-            avatar  // Pass avatar URL here
-        });
-        
+    const avatar = messageObj.avatar_url;
+       // displayChatMessage({ from, body, role: messageObj.role });
+ displayChatMessage({
+                    from: messageObj.from,
+                    body: messageObj.body,
+                    role: messageObj.role,
+                    avatar: messageObj.avatar_url  // Pass avatar URL here
+                });
         // Check for special spin command
-        if (sendspinMessages) {
-            if (body === '.s') {
-                const responses = [
-                    `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
-                    `kick`,
-                    `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
-                    `${from} you got ☔ Umbrella from me`,
-                    `You got a pair of shoes 👟👟 ${from}`,
-                    `Dress and Pants 👕 👖 for you ${from}`,
-                    `💻 Laptop for you ${from}`,
-                    `Great! ${from} you can travel now ✈️`,
-                    `${from} you have an apple 🍎`,
-                    `kick`,
-                    `Carrots for you 🥕 ${from}`,
-                    `${from} you got an ice cream 🍦`,
-                    `🍺 🍻 Beer for you ${from}`,
-                    `You wanna game with me 🏀 ${from}`,
-                    `Guitar 🎸 for you ${from}`,
-                    `For you❤️ ${from}`
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                if (randomResponse === 'kick') {
-                    await sendMessage(`Sorry! You Got Kick ${from}`);
-                    await kickUser(from);
-                } else {
-                    await sendMessage(randomResponse);
-                }
-            } else if (body === '+wc') {
-                if (masterInput.value === from) {
-                    welcomeCheckbox.checked = true;
-                    sendWelcomeMessages = true;
-                    await sendMessage('Welcome messages activated.');
-                }
-            } else if (body === '-wc') {
-                if (masterInput.value === from) {
-                    welcomeCheckbox.checked = false;
-                    sendWelcomeMessages = false;
-                    await sendMessage('Welcome messages deactivated.');
-                }
-            } else if (body === '+spin') {
-                if (masterInput.value === from) {
-                    spinCheckbox.checked = true;
-                    sendspinMessages = false;
-                    await sendMessage('Spin Activated.');
-                }
-            } else if (body === '-spin') {
-                if (masterInput.value === from) {
-                    spinCheckbox.checked = false;
-                    sendspinMessages = false;
-                    await sendMessage('Spin Deactivated.');
-                }
+        if (body === '.s') {
+            const responses = [
+                `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
+                `kick`,
+                `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
+                `${from} you got ☔ Umbrella from me`,
+                `You got a pair of shoes 👟👟 ${from}`,
+                `Dress and Pants 👕 👖 for you ${from}`,
+                `💻 Laptop for you ${from}`,
+                `Great! ${from} you can travel now ✈️`,
+                `${from} you have an apple 🍎`,
+                `kick`,
+                `Carrots for you 🥕 ${from}`,
+                `${from} you got an ice cream 🍦`,
+                `🍺 🍻 Beer for you ${from}`,
+                `You wanna game with me 🏀 ${from}`,
+                `Guitar 🎸 for you ${from}`,
+                `For you❤️ ${from}`
+            ];
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            if (randomResponse === 'kick') {
+                await sendMessage( `Sorry! You Got Kick  ${from}`);
+
+   await kickUser(from);
+            } else {
+                await sendMessage(randomResponse);
             }
+        } else if (body === '+wc') {
+if (masterInput.value ===from){
+
+            welcomeCheckbox.checked = true;
+            sendWelcomeMessages = true;
+            await sendMessage('Welcome messages activated.');
+}
+        } else if (body === '-wc') {
+if (masterInput.value ===from){
+            welcomeCheckbox.checked = false;
+            sendWelcomeMessages = false;
+            await sendMessage('Welcome messages deactivated.');
+}
         }
-    } else if (type === 'image') {
-        const from = messageObj.from;
-        const url = messageObj.url;
-        const avatar = messageObj.avatar_url;
-        displayChatMessage({
-            from,
-            body: `<img src="${url}" alt="image" />`,
-            role: messageObj.role,
-            avatar  // Pass avatar URL here
-        });
-    } else if (type === 'role_changed') {
+     } else if (type === 'role_changed') {
         const oldRole = messageObj.old_role;
         const newRole = messageObj.new_role;
         const user = messageObj.t_username;
@@ -430,32 +426,40 @@ async function handleRoomEvent(messageObj) {
     }
 }
 
+function displayChatMessage(messageObj, color = 'black') {
+    const { from, body, role, avatar } = messageObj;
+    const newMessage = document.createElement('div');
+    newMessage.style.display = 'flex';
+    newMessage.style.alignItems = 'center';
+    newMessage.style.marginBottom = '10px';
 
-
-   function displayChatMessage(from, message, role, avatarUrl) {
-        console.log('Displaying message from:', from);
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-
-        const avatarElement = document.createElement('img');
-        avatarElement.classList.add('avatar');
-        avatarElement.src = avatarUrl;
-
-        const usernameElement = document.createElement('span');
-        usernameElement.classList.add('username');
-        usernameElement.textContent = `${from} (${role})`;
-
-        const textElement = document.createElement('span');
-        textElement.classList.add('text');
-        textElement.textContent = message;
-
-        messageElement.appendChild(avatarElement);
-        messageElement.appendChild(usernameElement);
-        messageElement.appendChild(textElement);
-
-        chatbox.appendChild(messageElement);
-        chatbox.scrollTop = chatbox.scrollHeight;
+    if (avatar) {
+        const avatarImg = document.createElement('img');
+        avatarImg.src = avatar;
+        avatarImg.alt = `${from}'s avatar`;
+        avatarImg.style.width = '40px';
+        avatarImg.style.height = '40px';
+        avatarImg.style.borderRadius = '50%';
+        avatarImg.style.marginRight = '10px';
+        newMessage.appendChild(avatarImg);
     }
+
+    if (from) {
+        const coloredFrom = document.createElement('span');
+        coloredFrom.textContent = `${from}: `;
+        coloredFrom.style.color = getRoleColor(role);
+        coloredFrom.style.fontWeight = 'bold';
+        newMessage.appendChild(coloredFrom);
+    }
+
+    const messageBody = document.createElement('span');
+    messageBody.textContent = body;
+    messageBody.style.color = color;
+
+    newMessage.appendChild(messageBody);
+    chatbox.appendChild(newMessage);
+    chatbox.scrollTop = chatbox.scrollHeight;
+}
 
 
 function displayRoomSubject(subject) {
