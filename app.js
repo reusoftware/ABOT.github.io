@@ -429,37 +429,7 @@ async function handleRoomEvent(messageObj) {
         }
     }
 }
-function displayChatMessage(jsonDict) {
-    const { sender, body, type, username, name, url } = jsonDict;
 
-    const chatMessageDiv = document.createElement('div');
-    chatMessageDiv.classList.add('chat-message');
-
-    const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('username');
-    usernameSpan.textContent = sender || username;
-    chatMessageDiv.appendChild(usernameSpan);
-
-    const messageSpan = document.createElement('span');
-    messageSpan.classList.add('message');
-
-    if (type === 'image' || (body && isImageUrl(body))) {
-        const img = document.createElement('img');
-        img.src = url || body;
-        img.alt = 'Image';
-        messageSpan.appendChild(img);
-    } else {
-        messageSpan.textContent = body;
-    }
-
-    chatMessageDiv.appendChild(messageSpan);
-    chatbox.appendChild(chatMessageDiv);
-    chatbox.scrollTop = chatbox.scrollHeight;
-}
-
-function isImageUrl(url) {
-    return (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
-}
 
 
 
