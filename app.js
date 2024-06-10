@@ -274,7 +274,6 @@ spinCheckbox.addEventListener('change', () => {
         console.error('Error processing received message:', ex);
     }
 }
-
 async function handleRoomEvent(messageObj) {
     const type = messageObj.type;
     const userName = messageObj.username || 'Unknown';
@@ -299,9 +298,9 @@ async function handleRoomEvent(messageObj) {
         updateUserListbox();
     } else if (type === 'user_joined') {
         displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
-if (userName === 'prateek'){
-await setRole(userName, 'outcast');
-}
+        if (userName === 'prateek'){
+            await setRole(userName, 'outcast');
+        }
         if (sendWelcomeMessages) {
             const welcomeMessages = [
                 `welcome ${userName}`,
@@ -332,71 +331,79 @@ await setRole(userName, 'outcast');
     } else if (type === 'text') {
         const body = messageObj.body;
         const from = messageObj.from;
-    const avatar = messageObj.avatar_url;
-       // displayChatMessage({ from, body, role: messageObj.role });
- displayChatMessage({
-                    from: messageObj.from,
-                    body: messageObj.body,
-                    role: messageObj.role,
-                    avatar: messageObj.avatar_url  // Pass avatar URL here
-                });
+        const avatar = messageObj.avatar_url;
+        displayChatMessage({
+            from,
+            body,
+            role: messageObj.role,
+            avatar  // Pass avatar URL here
+        });
+        
         // Check for special spin command
-if (sendspinMessages) {
-        if (body === '.s') {
-            const responses = [
-                `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
-                `kick`,
-                `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
-                `${from} you got ☔ Umbrella from me`,
-                `You got a pair of shoes 👟👟 ${from}`,
-                `Dress and Pants 👕 👖 for you ${from}`,
-                `💻 Laptop for you ${from}`,
-                `Great! ${from} you can travel now ✈️`,
-                `${from} you have an apple 🍎`,
-                `kick`,
-                `Carrots for you 🥕 ${from}`,
-                `${from} you got an ice cream 🍦`,
-                `🍺 🍻 Beer for you ${from}`,
-                `You wanna game with me 🏀 ${from}`,
-                `Guitar 🎸 for you ${from}`,
-                `For you❤️ ${from}`
-            ];
-            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-            if (randomResponse === 'kick') {
-                await sendMessage( `Sorry! You Got Kick  ${from}`);
-
-   await kickUser(from);
-            } else {
-                await sendMessage(randomResponse);
+        if (sendspinMessages) {
+            if (body === '.s') {
+                const responses = [
+                    `Let's Drink ${from}  (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
+                    `kick`,
+                    `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
+                    `${from} you got ☔ Umbrella from me`,
+                    `You got a pair of shoes 👟👟 ${from}`,
+                    `Dress and Pants 👕 👖 for you ${from}`,
+                    `💻 Laptop for you ${from}`,
+                    `Great! ${from} you can travel now ✈️`,
+                    `${from} you have an apple 🍎`,
+                    `kick`,
+                    `Carrots for you 🥕 ${from}`,
+                    `${from} you got an ice cream 🍦`,
+                    `🍺 🍻 Beer for you ${from}`,
+                    `You wanna game with me 🏀 ${from}`,
+                    `Guitar 🎸 for you ${from}`,
+                    `For you❤️ ${from}`
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                if (randomResponse === 'kick') {
+                    await sendMessage(`Sorry! You Got Kick ${from}`);
+                    await kickUser(from);
+                } else {
+                    await sendMessage(randomResponse);
+                }
+            } else if (body === '+wc') {
+                if (masterInput.value === from) {
+                    welcomeCheckbox.checked = true;
+                    sendWelcomeMessages = true;
+                    await sendMessage('Welcome messages activated.');
+                }
+            } else if (body === '-wc') {
+                if (masterInput.value === from) {
+                    welcomeCheckbox.checked = false;
+                    sendWelcomeMessages = false;
+                    await sendMessage('Welcome messages deactivated.');
+                }
+            } else if (body === '+spin') {
+                if (masterInput.value === from) {
+                    spinCheckbox.checked = true;
+                    sendspinMessages = false;
+                    await sendMessage('Spin Activated.');
+                }
+            } else if (body === '-spin') {
+                if (masterInput.value === from) {
+                    spinCheckbox.checked = false;
+                    sendspinMessages = false;
+                    await sendMessage('Spin Deactivated.');
+                }
             }
-}
-        } else if (body === '+wc') {
-if (masterInput.value ===from){
-
-            welcomeCheckbox.checked = true;
-            sendWelcomeMessages = true;
-            await sendMessage('Welcome messages activated.');
-}
-        } else if (body === '-wc') {
-if (masterInput.value ===from){
-            welcomeCheckbox.checked = false;
-            sendWelcomeMessages = false;
-            await sendMessage('Welcome messages deactivated.');
-}
-}else if (body === '+spin') {
-if (masterInput.value ===from){
-           spinCheckbox.checked = true;
-            sendspinMessages = false;
-            await sendMessage('Spin Activated.');
-}
-}else if (body === '-spin') {
-if (masterInput.value ===from){
-            spinCheckbox.checked = false;
-            sendspinMessages = false;
-            await sendMessage('Spin Deactivated.');
-}
         }
-     } else if (type === 'role_changed') {
+    } else if (type === 'image') {
+        const from = messageObj.from;
+        const url = messageObj.url;
+        const avatar = messageObj.avatar_url;
+        displayChatMessage({
+            from,
+            body: `<img src="${url}" alt="image" />`,
+            role: messageObj.role,
+            avatar  // Pass avatar URL here
+        });
+    } else if (type === 'role_changed') {
         const oldRole = messageObj.old_role;
         const newRole = messageObj.new_role;
         const user = messageObj.t_username;
@@ -422,6 +429,32 @@ if (masterInput.value ===from){
         }
     }
 }
+
+function displayChatMessage({ from, body, role, avatar }) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'chat-message';
+
+    if (avatar) {
+        const avatarElement = document.createElement('img');
+        avatarElement.src = avatar;
+        avatarElement.alt = `${from}'s avatar`;
+        avatarElement.className = 'avatar';
+        messageElement.appendChild(avatarElement);
+    }
+
+    const fromElement = document.createElement('span');
+    fromElement.className = 'from';
+    fromElement.textContent = from;
+    messageElement.appendChild(fromElement);
+
+    const bodyElement = document.createElement('span');
+    bodyElement.className = 'body';
+    bodyElement.innerHTML = body;
+    messageElement.appendChild(bodyElement);
+
+    document.getElementById('chat').appendChild(messageElement);
+}
+
 
 function displayChatMessage(messageObj, color = 'black') {
     const { from, body, role, avatar } = messageObj;
