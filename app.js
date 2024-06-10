@@ -449,14 +449,30 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(coloredFrom);
     }
 
-    const messageBody = document.createElement('span');
-    messageBody.textContent = body;
-    messageBody.style.color = color;
+    // Check if the body is an image URL
+    if (isImageUrl(body)) {
+        const imageElement = document.createElement('img');
+        imageElement.src = body;
+        imageElement.alt = 'Image';
+        imageElement.style.maxWidth = '300px';  // Adjust size as needed
+        imageElement.style.borderRadius = '10px';
+        newMessage.appendChild(imageElement);
+    } else {
+        const messageBody = document.createElement('span');
+        messageBody.textContent = body;
+        messageBody.style.color = color;
+        newMessage.appendChild(messageBody);
+    }
 
-    newMessage.appendChild(messageBody);
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
+
+// Helper function to check if a string is a valid image URL
+function isImageUrl(url) {
+    return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+}
+
 
 
 function displayRoomSubject(subject) {
