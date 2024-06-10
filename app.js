@@ -5,6 +5,12 @@
     let sendWelcomeMessages = false;
     let currentUsername = '';
     let userList = [];
+  let reconnectInterval = 10000; // 10 seconds for reconnect attempts
+    let reconnectTimeout;
+
+
+
+
 
     const loginButton = document.getElementById('loginButton');
     const joinRoomButton = document.getElementById('joinRoomButton');
@@ -52,8 +58,16 @@ adminButton.addEventListener('click', async () => {
         await setRole(target, 'member');
     });
 kickButton.addEventListener('click', async () => {
-        const target = targetInput.value;
-       await kickUser(target);
+       // const target = targetInput.value;
+     //  await kickUser(target);
+
+    const mucType = "public_rooms"; 
+        const packetID = generatePacketID();
+        const mucPageNum = 1; 
+
+        console.log('Requesting chatroom list:', { mucType, packetID, mucPageNum });
+        await getChatroomList(mucType, packetID, mucPageNum);
+
     });
 
     banButton.addEventListener('click', async () => {
@@ -139,13 +153,15 @@ spinCheckbox.addEventListener('change', () => {
         }
     });
 
-    async function connectWebSocket(username, password) {
+   async function connectWebSocket(username, password) {
         statusDiv.textContent = 'Connecting to server...';
         socket = new WebSocket('wss://chatp.net:5333/server');
 
         socket.onopen = async () => {
             isConnected = true;
             statusDiv.textContent = 'Connected to server';
+            clearTimeout(reconnectTimeout);
+
             const loginMessage = {
                 username: username,
                 password: password,
@@ -164,15 +180,24 @@ spinCheckbox.addEventListener('change', () => {
         socket.onclose = () => {
             isConnected = false;
             statusDiv.textContent = 'Disconnected from server';
+            attemptReconnect(username, password);
         };
 
         socket.onerror = (error) => {
             console.error('WebSocket error:', error);
             statusDiv.textContent = 'WebSocket error. Check console for details.';
+            attemptReconnect(username, password);
         };
     }
 
-    async function joinRoom(roomName) {
+    async function attemptReconnect(username, password) {
+        if (!isConnected) {
+            statusDiv.textContent = 'Attempting to reconnect...';
+            reconnectTimeout = setTimeout(() => connectWebSocket(username, password), reconnectInterval);
+        }
+    }
+
+     async function joinRoom(roomName) {
         if (isConnected) {
             const joinMessage = {
                 handler: 'room_join',
@@ -181,7 +206,7 @@ spinCheckbox.addEventListener('change', () => {
             };
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
-await chat('syntax-error', 'your message here');
+            await chat('syntax-error', 'your message here');
             if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
                 await sendMessage(welcomeMessage);
@@ -190,6 +215,14 @@ await chat('syntax-error', 'your message here');
             statusDiv.textContent = 'Not connected to server';
         }
     }
+
+    function rejoinRoomIfNecessary() {
+        const room = document.getElementById('room').value;
+        if (room) {
+            joinRoom(room);
+        }
+    }
+
 
     async function leaveRoom(roomName) {
         if (isConnected) {
@@ -289,7 +322,7 @@ async function chat(to, body) {
             } else if (handler === 'room_event') {
                 handleRoomEvent(jsonDict);
             } else if (handler === 'chat_message') {
-                 //  displayChatMessage(jsonDict);
+                //   displayChatMessage(jsonDict);
             } else if (handler === 'presence') {
                 onUserProfileUpdates(jsonDict);
             } else if (handler === 'group_invite') {
@@ -310,8 +343,8 @@ async function chat(to, body) {
                 onGetUserProfile(jsonDict);
             } else if (handler === 'followers_event') {
                 onFollowersList(jsonDict);
-            } else if (handler === 'add_buddy') {
-                onAddBuddy(jsonDict);
+            } else if (handler === 'room_info') {
+              handleMucList(jsonDict);
             } else {
                 console.log('Unknown handler:', handler);
             }
@@ -322,18 +355,40 @@ async function chat(to, body) {
 }
 
 
-async function handleLoginEvent(messageObj) {
-    const type = messageObj.type;
-    if (type === 'success') {
-
-        statusDiv.textContent = 'Online';
-  const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
 
 
-       await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
+
+
+   function handleMucList(messageObj) {
+        const roomList = messageObj.rooms;
+        roomListbox.innerHTML = ''; // Clear the current list
+
+        roomList.forEach(room => {
+            const option = document.createElement('option');
+            option.value = room.name;
+            option.textContent = `${room.name} (${room.count} users)`;
+            roomListbox.appendChild(option);
+        });
     }
-}
+
+
+
+    async function handleLoginEvent(messageObj) {
+        const type = messageObj.type;
+        if (type === 'success') {
+            statusDiv.textContent = 'Online';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
+
+            const mucType = "public_rooms"; 
+            const packetID = generatePacketID();
+            const mucPageNum = 1; 
+
+            await getChatroomList(mucType, packetID, mucPageNum);
+            rejoinRoomIfNecessary(); 
+        }
+    }
 
 
 
@@ -675,6 +730,46 @@ async function setRole(username, role) {
         userListbox.appendChild(option);
     });
 }
+
+
+
+  async function getChatroomList(mucType, packetID, pageNum) {
+        const messageData = {
+            handler: 'room_info',
+            id: packetID,
+            type: mucType,
+            page: pageNum
+        };
+        await sendMessageToSocket(messageData);
+    }
+
+
+socket.on('message', (messageObj) => {
+    const type = messageObj.type;
+
+    if (type === 'typing') {
+        handleTypingEvent(messageObj);
+    } else if (type === 'room_info_response') {
+        handleRoomInfoResponse(messageObj);
+    } else {
+        // Handle other message types
+        displayChatMessage(messageObj);
+    }
+});
+
+function handleRoomInfoResponse(response) {
+    const roomListBox = document.getElementById('roomlistbox');
+    roomListBox.innerHTML = ''; // Clear previous list
+
+    response.rooms.forEach(room => {
+        const roomItem = document.createElement('li');
+        roomItem.textContent = room.name; // Assuming room object has a name property
+        roomListBox.appendChild(roomItem);
+    });
+}
+
+
+
 
 
 
