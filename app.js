@@ -140,8 +140,164 @@ const quizQuestions = [
         question: "Who painted the Mona Lisa?",
         options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
         answer: "Leonardo da Vinci"
+    },
+    {
+        question: "What is the smallest planet in our solar system?",
+        options: ["Mercury", "Venus", "Earth", "Mars"],
+        answer: "Mercury"
+    },
+    {
+        question: "What is the chemical symbol for water?",
+        options: ["H2O", "O2", "CO2", "NaCl"],
+        answer: "H2O"
+    },
+    {
+        question: "Who wrote 'Romeo and Juliet'?",
+        options: ["William Shakespeare", "Charles Dickens", "Mark Twain", "Jane Austen"],
+        answer: "William Shakespeare"
+    },
+    {
+        question: "What is the largest mammal in the world?",
+        options: ["Blue Whale", "Elephant", "Giraffe", "Great White Shark"],
+        answer: "Blue Whale"
+    },
+    {
+        question: "Which planet is known as the Red Planet?",
+        options: ["Mars", "Jupiter", "Saturn", "Venus"],
+        answer: "Mars"
+    },
+    {
+        question: "Who discovered penicillin?",
+        options: ["Alexander Fleming", "Marie Curie", "Isaac Newton", "Albert Einstein"],
+        answer: "Alexander Fleming"
+    },
+    {
+        question: "What is the longest river in the world?",
+        options: ["Nile", "Amazon", "Yangtze", "Mississippi"],
+        answer: "Nile"
+    },
+    {
+        question: "Who was the first President of the United States?",
+        options: ["George Washington", "Thomas Jefferson", "Abraham Lincoln", "John Adams"],
+        answer: "George Washington"
+    },
+    {
+        question: "What is the hardest natural substance on Earth?",
+        options: ["Diamond", "Gold", "Iron", "Quartz"],
+        answer: "Diamond"
+    },
+    {
+        question: "Which organ is responsible for pumping blood throughout the body?",
+        options: ["Heart", "Liver", "Kidney", "Brain"],
+        answer: "Heart"
+    },
+    {
+        question: "Who is known as the 'Father of Computers'?",
+        options: ["Charles Babbage", "Alan Turing", "Bill Gates", "Steve Jobs"],
+        answer: "Charles Babbage"
+    },
+    {
+        question: "What is the largest ocean on Earth?",
+        options: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
+        answer: "Pacific Ocean"
+    },
+    {
+        question: "Who wrote 'Pride and Prejudice'?",
+        options: ["Jane Austen", "Emily Brontë", "Charles Dickens", "Mark Twain"],
+        answer: "Jane Austen"
+    },
+    {
+        question: "What is the main ingredient in guacamole?",
+        options: ["Avocado", "Tomato", "Lettuce", "Cucumber"],
+        answer: "Avocado"
+    },
+    {
+        question: "What is the capital of Japan?",
+        options: ["Tokyo", "Osaka", "Kyoto", "Nagoya"],
+        answer: "Tokyo"
+    },
+    {
+        question: "What is the process by which plants make their food?",
+        options: ["Photosynthesis", "Respiration", "Digestion", "Evaporation"],
+        answer: "Photosynthesis"
+    },
+    {
+        question: "Which planet is known as the Earth's twin?",
+        options: ["Venus", "Mars", "Jupiter", "Saturn"],
+        answer: "Venus"
+    },
+    {
+        question: "Who invented the telephone?",
+        options: ["Alexander Graham Bell", "Thomas Edison", "Nikola Tesla", "Guglielmo Marconi"],
+        answer: "Alexander Graham Bell"
+    },
+    {
+        question: "What is the capital of Italy?",
+        options: ["Rome", "Venice", "Milan", "Florence"],
+        answer: "Rome"
+    },
+    {
+        question: "Who wrote 'The Odyssey'?",
+        options: ["Homer", "Virgil", "Plato", "Aristotle"],
+        answer: "Homer"
+    },
+    {
+        question: "What is the largest desert in the world?",
+        options: ["Sahara", "Gobi", "Kalahari", "Arctic"],
+        answer: "Sahara"
+    },
+    {
+        question: "Who developed the theory of relativity?",
+        options: ["Albert Einstein", "Isaac Newton", "Galileo Galilei", "Niels Bohr"],
+        answer: "Albert Einstein"
+    },
+    {
+        question: "What is the tallest mountain in the world?",
+        options: ["Mount Everest", "K2", "Kangchenjunga", "Lhotse"],
+        answer: "Mount Everest"
+    },
+    {
+        question: "What is the most widely spoken language in the world?",
+        options: ["English", "Mandarin", "Spanish", "Hindi"],
+        answer: "Mandarin"
+    },
+    {
+        question: "What is the currency of Japan?",
+        options: ["Yen", "Dollar", "Euro", "Won"],
+        answer: "Yen"
+    },
+    {
+        question: "Who is known as the 'Queen of Pop'?",
+        options: ["Madonna", "Britney Spears", "Lady Gaga", "Beyoncé"],
+        answer: "Madonna"
+    },
+    {
+        question: "What is the fastest land animal?",
+        options: ["Cheetah", "Lion", "Tiger", "Leopard"],
+        answer: "Cheetah"
+    },
+    {
+        question: "What is the name of the largest moon of Saturn?",
+        options: ["Titan", "Europa", "Ganymede", "Callisto"],
+        answer: "Titan"
+    },
+    {
+        question: "Who wrote '1984'?",
+        options: ["George Orwell", "Aldous Huxley", "Ray Bradbury", "Arthur C. Clarke"],
+        answer: "George Orwell"
+    },
+    {
+        question: "What is the name of the longest bone in the human body?",
+        options: ["Femur", "Tibia", "Fibula", "Humerus"],
+        answer: "Femur"
+    },
+    {
+        question: "What is the hardest rock?",
+        options: ["Diamond", "Granite", "Marble", "Quartz"],
+        answer: "Diamond"
     }
 ];
+
 
 
        async function startQuizWithTimer() {
