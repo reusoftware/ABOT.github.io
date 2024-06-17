@@ -14,13 +14,14 @@ let captchaUrls = "";
   //  let sendCaptchaButton;
 let captchaImg, captchaTextbox, sendCaptchaButton;
 //=======================
-
+let quizInterval;
+//const quizIntervalTime = 10000; // Time in milliseconds (10 seconds for this example)
+const quizIntervalTime = 10000; // Time in milliseconds (10 seconds for this example)
  
     const loginButton = document.getElementById('loginButton');
     const joinRoomButton = document.getElementById('joinRoomButton');
     const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
-
     const statusDiv = document.getElementById('status');
     const statusCount = document.getElementById('count');
    // const chatbox = document.getElementById('chatbox');
@@ -43,12 +44,12 @@ const ownerButton = document.getElementById('ownerButton');
 const noneButton = document.getElementById('noneButton');
  const masterInput = document.getElementById('master');
    const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
+ let currentQuestionIndex = 0;
+        let currentAnswer = '';
+        let attempts = 0;
+        const maxAttempts = 5;
+        const scores = [500, 400, 300, 200, 100];  // Scores for each attempt
 
-
-
-
-
- 
 
 
 
@@ -103,24 +104,83 @@ kickButton.addEventListener('click', async () => {
     });
 
      sendMessageButton.addEventListener('click', async () => {
-      //  const message = messageInput.value;
-       // await sendMessage(message);
-
-   //  const captchaValue = captchaTextbox.value;
-// await sendCaptcha(captchaValue, captchaUrls);
-
-  const packetID = generatePacketID(); // Assuming you have a function to generate packet IDs
-    const message = {
-        handler: 'profile_other',
-        type:  messageInput.value,
-        id: packetID
-    };
-    console.log(`Sending profile_other message: ${JSON.stringify(message)}`);
-    
-    await sendMessageToSocket(message);
+       const message = messageInput.value;
+       await sendMessage(message);
 
 
     });
+
+
+ // Event listener for the captcha button
+function addCaptchaButtonListener() {
+    sendCaptchaButton.addEventListener('click', async () => {
+        console.log('send captcha');
+        const captchaValue = captchaTextbox.value;
+        await sendCaptcha(captchaValue, captchaUrls);
+    });
+}
+
+activateQuizCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            console.log('Check activated');
+            activateQuiz();
+        }
+    });
+
+
+
+// Define quizQuestions
+const quizQuestions = [
+    {
+        question: "What is the capital of France?",
+        options: ["Paris", "London", "Berlin", "Rome"],
+        answer: "Paris"
+    },
+    {
+        question: "Who painted the Mona Lisa?",
+        options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
+        answer: "Leonardo da Vinci"
+    }
+];
+
+
+       async function startQuizWithTimer() {
+            currentQuestionIndex = 0;
+
+            while (currentQuestionIndex < quizQuestions.length) {
+                const questionObj = quizQuestions[currentQuestionIndex];
+                const { question, options, answer } = questionObj;
+
+                // Set the current answer
+                currentAnswer = answer;
+
+                attempts = 0;
+                let answeredCorrectly = false;
+
+                while (attempts < maxAttempts && !answeredCorrectly) {
+                    // Construct the message to send to the chat
+                    const message = `Question: ${question}\nOptions: ${options.join(', ')}\n(Attempt ${attempts + 1})`;
+
+                    // Send the message to the chat
+                    await sendMessage(message);
+
+                    // Wait for 10 seconds before showing the next attempt
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+
+                    attempts++;
+                }
+
+                if (!answeredCorrectly) {
+                    // Reveal the correct answer if no correct answer was received after maxAttempts
+                    await sendMessage(`No correct answer received. The correct answer is: ${currentAnswer}`);
+                }
+
+                currentQuestionIndex++;
+            }
+
+            await sendMessage('Quiz finished!');
+        }
+
 
    function addMessageToChatbox(username, message, avatarUrl) {
         const messageElement = document.createElement('div');
@@ -274,6 +334,12 @@ spinCheckbox.addEventListener('change', () => {
         }
     }
 
+
+
+
+  
+
+
 async function sendCaptcha(captcha, captchaUrl) {
     if (isConnected) {
         const messageData = {
@@ -294,6 +360,53 @@ async function sendCaptcha(captcha, captchaUrl) {
         console.log('Not connected to server');  // Debug statement
     }
 }
+
+
+
+
+// Function to handle 'room_needs_captcha' event
+function handleCaptcha(messageObj) {
+    const captchaUrl = messageObj.captcha_url;
+
+    // Create captcha image element
+    captchaImg = document.createElement('img');
+    captchaImg.src = captchaUrl;
+    captchaImg.style.maxWidth = '200px'; 
+    captchaUrls = captchaUrl;
+
+    // Create textbox for entering captcha text
+    captchaTextbox = document.createElement('input');
+    captchaTextbox.type = 'text';
+    captchaTextbox.placeholder = 'Enter Captcha';
+
+    // Create button for sending captcha
+    sendCaptchaButton = document.createElement('button');
+    sendCaptchaButton.textContent = 'Send Captcha';
+
+    // Append captcha image, textbox, and button to the chatbox
+    const chatbox = document.getElementById('chatbox'); // Ensure chatbox element exists
+    chatbox.innerHTML = ''; // Clear previous captcha images if any
+    chatbox.appendChild(captchaImg);
+    chatbox.appendChild(captchaTextbox);
+    chatbox.appendChild(sendCaptchaButton);
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+    // Add the event listener for the captcha button
+    addCaptchaButtonListener();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function chat(to, body) {
     const packetID = generatePacketID();  // Assuming generatePacketID() generates a unique packet ID
     const message = {
@@ -408,27 +521,44 @@ function generatePacketID() {
 
 
 async function handleprofother(messageObj) {
-    const username = messageObj.type;
-    const profurl = messageObj.photo_url;
-    const views = messageObj.views;
-    const status = messageObj.status;
-    const country = messageObj.country;
-    const creation = messageObj.reg_date;
-    const friends = messageObj.roster_count;
+    try {
+        console.log('Inside handleprofother');
 
-    const messageData = `
-        Username: ${username}\n
-        Views: ${views}\n
-        Status: ${status}\n
-        Country: ${country}\n
-        Registration Date: ${creation}\n
-        Friends: ${friends}
-    `
-    await sendMessage(messageData);
-   if (profurl) {
-      await sendMessage(profurl); 
+        const username = messageObj.type;
+        const profurl = messageObj.photo_url;
+        const views = messageObj.views;
+        const status = messageObj.status;
+        const country = messageObj.country;
+        const creation = messageObj.reg_date;
+        const friends = messageObj.roster_count;
+        const gender = messageObj.gender;
+const gend ='';
+if(gender = '0' ){
+gend ='Unknown'
+}else if (gender = '1'){
+gend ='Male';
+ }else if (gender = '2'){
+gend ='Female';  
+}
+
+
+
+       
+        if (profurl) {
+            await sendimage(profurl);
+        }
+
+        if (username) {
+            const messageData = `Username: ${username}\nStatus: ${status}\nViews: ${views}\nCountry: ${country}\nRegistration Date: ${creation}\nFriends: ${friends}\nGender: ${gend}`;
+            await sendMessage(messageData);
+        } else {
+            await sendMessage('User not found');
+        }
+    } catch (error) {
+        console.error('Error in handleprofother:', error);
     }
 }
+
 
 
      function handleMucList(messageObj) {
@@ -474,8 +604,8 @@ async function handleRoomEvent(messageObj) {
   
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-        statusCount.textContent = `Total User: ${count}`;
-
+      //  statusCount.textContent = `Total User: ${count}`;
+  statusCount.textContent = `you join the  ${roomName }`;
         // Display room subject with proper HTML rendering
         displayRoomSubject(`Room subject: ${messageObj.subject} (by ${messageObj.subject_author})`);
 
@@ -521,7 +651,7 @@ async function handleRoomEvent(messageObj) {
         updateUserListbox();
     } else if (type === 'user_left') {
         displayChatMessage({ from: userName, body: 'left the room.', role }, 'darkgreen');
- statusCount.textContent = `Total User: ${count}`;
+ //statusCount.textContent = `Total User: ${count}`;
         if (sendWelcomeMessages) {
             const goodbyeMessage = `Bye ${userName}!`;
             await sendMessage(goodbyeMessage);
@@ -546,10 +676,10 @@ async function handleRoomEvent(messageObj) {
 const trimmedBody = body.trim();
 if (trimmedBody.startsWith('pv@')) {
     console.log(`Detected 'pv@' prefix in message: ${trimmedBody}`);
-    await sendMessage(`ok ${from}`);
+ //   await sendMessage(`ok ${from}`);
     
     const username = trimmedBody.slice(3); // Extract the username after 'pv@'
-messageinput.value = username;
+//messageinput.value = username;
 
     console.log(`Extracted username: ${username}`);
     
@@ -569,6 +699,21 @@ messageinput.value = username;
 
 
        //==============
+
+const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');   
+  if (activateQuizCheckbox.checked) {
+                    const userMessage = body.trim().toLowerCase();
+
+                    if (currentAnswer && userMessage === currentAnswer.toLowerCase()) {
+                        const score = scores[attempts - 1] || 100; // Default to 100 if out of score range
+                        await sendMessage(`Correct! You earn ${score} points.`);
+                        attempts = maxAttempts; // Exit the current question loop
+                        return; // Stop processing this message
+                    }
+                }
+
+//==========================
+
 
 
  const masterUsernames = masterInput.value.split('#').map(username => username.trim());
@@ -660,35 +805,28 @@ messageinput.value = username;
 
         displayChatMessage({
             from: messageObj.from,
-            bodyurl: messageObj.url,
+            bodyurl: messageObj.to,
             role: messageObj.role,
             avatar: messageObj.avatar_url
         });
-    } else      if (type === 'room_needs_captcha') {
-            const captchaUrl = messageObj.captcha_url;
-
-    // Create captcha image element
-    captchaImg = document.createElement('img');
-    captchaImg.src = captchaUrl;
-    captchaImg.style.maxWidth = '200px'; 
-captchaUrls = captchaUrl;
-    // Create textbox for entering captcha text
-  captchaTextbox = document.createElement('input');
-   captchaTextbox.type = 'text';
-   captchaTextbox.placeholder = 'Enter Captcha';
-
-    // Create button for sending captcha
-   sendCaptchaButton = document.createElement('button');
-    sendCaptchaButton.textContent = 'Send Captcha';
-
-    // Append captcha image, textbox, and button to the chatbox
-    chatbox.innerHTML = ''; // Clear previous captcha images if any
-    chatbox.appendChild(captchaImg);
-    chatbox.appendChild(captchaTextbox);
-    chatbox.appendChild(sendCaptchaButton);
-    chatbox.scrollTop = chatbox.scrollHeight;
 
 
+}else   if (type === 'gift') {
+    const toRoom = messageObj.to_room;
+    const to = messageObj.to;
+    const from = messageObj.from;
+    const gift = messageObj.gift;
+
+    displayChatMessage({
+        toRoom: toRoom,
+        to: to,
+        from: from,
+        gift: gift
+    });
+}
+ else      if (type === 'room_needs_captcha') {
+    
+ handleCaptcha(messageObj);
     } else if (type === 'role_changed') {
         const oldRole = messageObj.old_role;
         const newRole = messageObj.new_role;
@@ -724,13 +862,13 @@ captchaUrls = captchaUrl;
 
     }
 
-
-
-
-
-
-
 }
+
+
+
+
+
+
 
 
 
@@ -934,92 +1072,32 @@ function handleRoomInfoResponse(response) {
 
 
 
-// Function to activate the quiz
+
+
+
+
+
+
+
+
+
+// Define activateQuiz function
 function activateQuiz() {
-    // Add your quiz activation logic here
     console.log('Quiz activated');
-}
-
-// Function to deactivate the quiz
-function deactivateQuiz() {
-    // Add your quiz deactivation logic here
-    console.log('Quiz deactivated');
-}
-
-// Event listener for the activate quiz checkbox
-document.getElementById('activateQuizCheckbox').addEventListener('change', function() {
-    if (this.checked) {
-        activateQuiz();
-    }
-});
-
-// Event listener for the deactivate quiz checkbox
-document.getElementById('deactivateQuizCheckbox').addEventListener('change', function() {
-    if (this.checked) {
-        deactivateQuiz();
-    }
-});
-
-
-const quizQuestions = [
-    {
-        question: "What is the capital of France?",
-        options: ["Paris", "London", "Berlin", "Rome"],
-        answer: "Paris"
-    },
-    {
-        question: "Who painted the Mona Lisa?",
-        options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
-        answer: "Leonardo da Vinci"
-    }
-];
-
-
-async function startQuiz() {
-    for (let i = 0; i < quizQuestions.length; i++) {
-        const questionObj = quizQuestions[i];
-        const question = questionObj.question;
-        const options = questionObj.options;
-        const answer = questionObj.answer;
-
-        // Post the question to the chatroom
-        const message = `${question}\n${options.join('\n')}`;
-        await sendMessage(message);
-
-        // Wait for the user's response
-        let userAnswer;
-        do {
-            userAnswer = prompt(question + "\n" + options.join("\n"));
-            if (userAnswer === null) return; // Handle cancel button press
-            userAnswer = userAnswer.trim();
-        } while (!options.includes(userAnswer));
-
-        // Check the user's answer
-        if (userAnswer.toLowerCase() === answer.toLowerCase()) {
-            // If the answer is correct, notify the user
-            await sendMessage("Correct!");
-        } else {
-            // If the answer is incorrect, provide the correct answer
-            await sendMessage(`Incorrect! The correct answer is: ${answer}`);
-        }
-    }
+    startQuizWithTimer();
 }
 
 
 
-function checkAnswer(userAnswer, correctAnswer) {
-    if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
-        alert("Correct!");
-    } else {
-        alert("Incorrect! The correct answer is: " + correctAnswer);
-    }
-}
 
- document.getElementById('activateQuizCheckbox').addEventListener('change', async function() {
-        if (this.checked) {
-            await startQuiz();
-        }
-    });
+
+
+
+
+
+
+
+
 
 
 
