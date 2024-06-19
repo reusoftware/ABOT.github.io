@@ -14,17 +14,15 @@ let captchaUrls = "";
   //  let sendCaptchaButton;
 let captchaImg, captchaTextbox, sendCaptchaButton;
 //=======================
-let quizInterval;
-//const quizIntervalTime = 10000; // Time in milliseconds (10 seconds for this example)
-const quizIntervalTime = 10000; // Time in milliseconds (10 seconds for this example)
- 
+
     const loginButton = document.getElementById('loginButton');
     const joinRoomButton = document.getElementById('joinRoomButton');
     const leaveRoomButton = document.getElementById('leaveRoomButton');
     const sendMessageButton = document.getElementById('sendMessageButton');
     const statusDiv = document.getElementById('status');
     const statusCount = document.getElementById('count');
-   // const chatbox = document.getElementById('chatbox');
+  const joinlog = document.getElementById('joinlog');
+      // const chatbox = document.getElementById('chatbox');
 let chatbox = document.getElementById('chatbox');
     const welcomeCheckbox = document.getElementById('welcomeCheckbox');
    const spinCheckbox = document.getElementById('spinCheckbox');
@@ -43,12 +41,6 @@ const adminButton = document.getElementById('adminButton');
 const ownerButton = document.getElementById('ownerButton');
 const noneButton = document.getElementById('noneButton');
  const masterInput = document.getElementById('master');
-   const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
- let currentQuestionIndex = 0;
-        let currentAnswer = '';
-        let attempts = 0;
-        const maxAttempts = 5;
-        const scores = [500, 400, 300, 200, 100];  // Scores for each attempt
 
 
 
@@ -106,7 +98,7 @@ kickButton.addEventListener('click', async () => {
      sendMessageButton.addEventListener('click', async () => {
        const message = messageInput.value;
        await sendMessage(message);
-
+messageInput.value=('');
 
     });
 
@@ -119,224 +111,271 @@ function addCaptchaButtonListener() {
         await sendCaptcha(captchaValue, captchaUrls);
     });
 }
-
-activateQuizCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            console.log('Check activated');
-            activateQuiz();
-        }
-    });
+ 
 
 
+//========================================
+let userData = {}; // To store user scores and response times
+let quizInterval;
+let attemptCounter = 0; // To track the number of attempts for the current question
 
-// Define quizQuestions
-const quizQuestions = [
-    {
-        question: "What is the capital of France?",
-        options: ["Paris", "London", "Berlin", "Rome"],
-        answer: "Paris"
-    },
-    {
-        question: "Who painted the Mona Lisa?",
-        options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
-        answer: "Leonardo da Vinci"
-    },
-    {
-        question: "What is the smallest planet in our solar system?",
-        options: ["Mercury", "Venus", "Earth", "Mars"],
-        answer: "Mercury"
-    },
-    {
-        question: "What is the chemical symbol for water?",
-        options: ["H2O", "O2", "CO2", "NaCl"],
-        answer: "H2O"
-    },
-    {
-        question: "Who wrote 'Romeo and Juliet'?",
-        options: ["William Shakespeare", "Charles Dickens", "Mark Twain", "Jane Austen"],
-        answer: "William Shakespeare"
-    },
-    {
-        question: "What is the largest mammal in the world?",
-        options: ["Blue Whale", "Elephant", "Giraffe", "Great White Shark"],
-        answer: "Blue Whale"
-    },
-    {
-        question: "Which planet is known as the Red Planet?",
-        options: ["Mars", "Jupiter", "Saturn", "Venus"],
-        answer: "Mars"
-    },
-    {
-        question: "Who discovered penicillin?",
-        options: ["Alexander Fleming", "Marie Curie", "Isaac Newton", "Albert Einstein"],
-        answer: "Alexander Fleming"
-    },
-    {
-        question: "What is the longest river in the world?",
-        options: ["Nile", "Amazon", "Yangtze", "Mississippi"],
-        answer: "Nile"
-    },
-    {
-        question: "Who was the first President of the United States?",
-        options: ["George Washington", "Thomas Jefferson", "Abraham Lincoln", "John Adams"],
-        answer: "George Washington"
-    },
-    {
-        question: "What is the hardest natural substance on Earth?",
-        options: ["Diamond", "Gold", "Iron", "Quartz"],
-        answer: "Diamond"
-    },
-    {
-        question: "Which organ is responsible for pumping blood throughout the body?",
-        options: ["Heart", "Liver", "Kidney", "Brain"],
-        answer: "Heart"
-    },
-    {
-        question: "Who is known as the 'Father of Computers'?",
-        options: ["Charles Babbage", "Alan Turing", "Bill Gates", "Steve Jobs"],
-        answer: "Charles Babbage"
-    },
-    {
-        question: "What is the largest ocean on Earth?",
-        options: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
-        answer: "Pacific Ocean"
-    },
-    {
-        question: "Who wrote 'Pride and Prejudice'?",
-        options: ["Jane Austen", "Emily Brontë", "Charles Dickens", "Mark Twain"],
-        answer: "Jane Austen"
-    },
-    {
-        question: "What is the main ingredient in guacamole?",
-        options: ["Avocado", "Tomato", "Lettuce", "Cucumber"],
-        answer: "Avocado"
-    },
-    {
-        question: "What is the capital of Japan?",
-        options: ["Tokyo", "Osaka", "Kyoto", "Nagoya"],
-        answer: "Tokyo"
-    },
-    {
-        question: "What is the process by which plants make their food?",
-        options: ["Photosynthesis", "Respiration", "Digestion", "Evaporation"],
-        answer: "Photosynthesis"
-    },
-    {
-        question: "Which planet is known as the Earth's twin?",
-        options: ["Venus", "Mars", "Jupiter", "Saturn"],
-        answer: "Venus"
-    },
-    {
-        question: "Who invented the telephone?",
-        options: ["Alexander Graham Bell", "Thomas Edison", "Nikola Tesla", "Guglielmo Marconi"],
-        answer: "Alexander Graham Bell"
-    },
-    {
-        question: "What is the capital of Italy?",
-        options: ["Rome", "Venice", "Milan", "Florence"],
-        answer: "Rome"
-    },
-    {
-        question: "Who wrote 'The Odyssey'?",
-        options: ["Homer", "Virgil", "Plato", "Aristotle"],
-        answer: "Homer"
-    },
-    {
-        question: "What is the largest desert in the world?",
-        options: ["Sahara", "Gobi", "Kalahari", "Arctic"],
-        answer: "Sahara"
-    },
-    {
-        question: "Who developed the theory of relativity?",
-        options: ["Albert Einstein", "Isaac Newton", "Galileo Galilei", "Niels Bohr"],
-        answer: "Albert Einstein"
-    },
-    {
-        question: "What is the tallest mountain in the world?",
-        options: ["Mount Everest", "K2", "Kangchenjunga", "Lhotse"],
-        answer: "Mount Everest"
-    },
-    {
-        question: "What is the most widely spoken language in the world?",
-        options: ["English", "Mandarin", "Spanish", "Hindi"],
-        answer: "Mandarin"
-    },
-    {
-        question: "What is the currency of Japan?",
-        options: ["Yen", "Dollar", "Euro", "Won"],
-        answer: "Yen"
-    },
-    {
-        question: "Who is known as the 'Queen of Pop'?",
-        options: ["Madonna", "Britney Spears", "Lady Gaga", "Beyoncé"],
-        answer: "Madonna"
-    },
-    {
-        question: "What is the fastest land animal?",
-        options: ["Cheetah", "Lion", "Tiger", "Leopard"],
-        answer: "Cheetah"
-    },
-    {
-        question: "What is the name of the largest moon of Saturn?",
-        options: ["Titan", "Europa", "Ganymede", "Callisto"],
-        answer: "Titan"
-    },
-    {
-        question: "Who wrote '1984'?",
-        options: ["George Orwell", "Aldous Huxley", "Ray Bradbury", "Arthur C. Clarke"],
-        answer: "George Orwell"
-    },
-    {
-        question: "What is the name of the longest bone in the human body?",
-        options: ["Femur", "Tibia", "Fibula", "Humerus"],
-        answer: "Femur"
-    },
-    {
-        question: "What is the hardest rock?",
-        options: ["Diamond", "Granite", "Marble", "Quartz"],
-        answer: "Diamond"
+const questionAnswerInput = document.getElementById('questionAnswerInput');
+const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
+
+let txtquiz = ''; // Initialize txtquiz as an empty string
+
+// Set up event listener to update txtquiz when the input value changes
+questionAnswerInput.addEventListener('input', function() {
+    txtquiz = questionAnswerInput.value;
+    localStorage.setItem('userQuestions', txtquiz);
+});
+
+// On page load or reload, get saved user questions from local storage
+window.addEventListener('load', function() {
+    const savedUserQuestions = localStorage.getItem('userQuestions');
+    if (savedUserQuestions) {
+        questionAnswerInput.value = savedUserQuestions;
+        txtquiz = savedUserQuestions;
     }
+});
+
+// Event listener for the checkbox to start/stop the quiz
+activateQuizCheckbox.addEventListener('change', () => {
+    if (activateQuizCheckbox.checked) {
+        startQuiz();
+    } else {
+        clearInterval(quizInterval);
+        sendMessageToChat('Quiz stopped!');
+    }
+});
+
+const attemptMessages = [
+    "Please Answer this😅! ",
+    "NoBody Know?😅!",
+    "Are you confuse 🤪 ",
+    "already given up yet 🥲😋"
 ];
 
+async function acakScramble(kataawal, chrsplit) {
+    const separator = chrsplit;
+    const words = kataawal.split(separator);
+    return await scrambleWordArray(words);
+}
 
+async function scrambleWordArray(words) {
+    let num;
+    let strArray2;
+    let num4;
+    let num5;
+    const random = Math.random;
+    const length = words.length;
+    let strArray = new Array(length).fill(null);
+    let flag = false;
+    let index = 0;
+    let pause = false;
+    let stop = false;
 
-       async function startQuizWithTimer() {
-            currentQuestionIndex = 0;
-
-            while (currentQuestionIndex < quizQuestions.length) {
-                const questionObj = quizQuestions[currentQuestionIndex];
-                const { question, options, answer } = questionObj;
-
-                // Set the current answer
-                currentAnswer = answer;
-
-                attempts = 0;
-                let answeredCorrectly = false;
-
-                while (attempts < maxAttempts && !answeredCorrectly) {
-                    // Construct the message to send to the chat
-                    const message = `Question: ${question}\nOptions: ${options.join(', ')}\n(Attempt ${attempts + 1})`;
-
-                    // Send the message to the chat
-                    await sendMessage(message);
-
-                    // Wait for 10 seconds before showing the next attempt
-                    await new Promise(resolve => setTimeout(resolve, 10000));
-
-                    attempts++;
-                }
-
-                if (!answeredCorrectly) {
-                    // Reveal the correct answer if no correct answer was received after maxAttempts
-                    await sendMessage(`No correct answer received. The correct answer is: ${currentAnswer}`);
-                }
-
-                currentQuestionIndex++;
-            }
-
-            await sendMessage('Quiz finished!');
+    while (true) {
+        if ((index >= length) || stop || pause) {
+            strArray2 = new Array(length).fill(null);
+            num4 = 0;
+            num5 = length - 1;
+            break;
         }
 
+        let flag2 = false;
+
+        while (!flag2) {
+            if (stop || pause) {
+                flag2 = true;
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 17)); // Simulate Thread.Sleep(&H11)
+                num = Math.floor(random() * length);
+
+                if ((num >= length) || (strArray[num] !== null && strArray[num] !== "") || flag2) {
+                    if (!stop && !pause) {
+                        continue;
+                    }
+                } else {
+                    if (index === Math.floor(length / 2) && !flag) {
+                        if (stop || pause) {
+                            flag2 = true;
+                            break;
+                        }
+                        await sendMessageToChat("Loading scramble quiz database 25% please wait .....................");
+                        flag = true;
+                    }
+
+                    if (index === length - 1) {
+                        if (stop || pause) {
+                            flag2 = true;
+                            break;
+                        }
+                        await sendMessageToChat("Loading scramble quiz database 50% please wait .....................");
+                    }
+
+                    strArray[num] = words[index];
+                    flag2 = true;
+                }
+            }
+        }
+
+        index += 1;
+    }
+
+    while (true) {
+        if ((num5 <= -1) || stop || pause) {
+            return strArray2;
+        } else {
+            let flag3 = false;
+
+            while (!flag3) {
+                if (stop || pause) {
+                    flag3 = true;
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 17)); // Simulate Thread.Sleep(&H11)
+                    num = Math.floor(random() * length);
+
+                    if ((num >= length) || (strArray2[num] !== null && strArray2[num] !== "") || flag3) {
+                        continue;
+                    }
+
+                    if (num4 === Math.floor(length / 2) && !flag) {
+                        if (stop || pause) {
+                            flag3 = true;
+                            break;
+                        }
+                        await sendMessageToChat("Loading scramble quiz database 75% please wait .....................");
+                        flag = true;
+                    }
+
+                    if (num4 === length - 1) {
+                        if (stop || pause) {
+                            flag3 = true;
+                            break;
+                        }
+                        await sendMessageToChat("Loading scramble quiz database 100% done!!");
+                    }
+
+                    strArray2[num] = strArray[num5];
+                    flag3 = true;
+                }
+            }
+
+            num4 += 1;
+            num5 -= 1;
+        }
+    }
+}
+
+async function startQuiz() {
+    attemptCounter = 0;
+    nomorquiz = 0;
+    qs = await acakScramble(txtquiz, '#');
+    await postQuestion();
+    quizInterval = setInterval(nextAttempt, 20000); // Set interval to 10 seconds for each attempt
+}
+
+async function postQuestion() {
+    if (nomorquiz >= qs.length) {
+        clearInterval(quizInterval);
+        await sendMessageToChat('Quiz finished!');
+        return;
+    }
+
+    const strArray = qs[nomorquiz].split('~');
+    jawabanquiz = strArray[1];
+    soalquiznya = await scrambleWord(jawabanquiz);
+    kategori = strArray[0].replace('Start With ', '');
+    cq1 = nomorquiz + 1; // Increment question number
+
+    const questionMessage = `Question #${cq1} [${kategori}] = ${soalquiznya}`;
+    await sendMessageToChat(questionMessage);
+    questionStartTime = Date.now(); // Start the timer for this question
+}
+
+async function nextAttempt() {
+    attemptCounter++;
+
+    if (attemptCounter <= 4) {
+        const attemptMessage = `${attemptMessages[attemptCounter - 1]} Question #${cq1} [${kategori}] = ${soalquiznya}`;
+        await sendMessageToChat(attemptMessage);
+    } else {
+        const revealMessage = `The correct answer is ${jawabanquiz}`;
+        await sendMessageToChat(revealMessage);
+        attemptCounter = 0; // Reset the attempt counter
+        nomorquiz += 1;
+
+        if (nomorquiz < qs.length) {
+            await postQuestion();
+        } else {
+            clearInterval(quizInterval);
+            await sendMessageToChat('Quiz finished!');
+        }
+    }
+}
+
+async function sendMessageToChat(message) {
+    console.log(message); // Replace with actual send message logic
+  await sendMessage(message);
+}
+
+async function scrambleWord(word) {
+    const characters = word.split('');
+    let scrambledWord = '';
+    const usedPositions = new Array(characters.length).fill(false);
+
+    while (scrambledWord.length < characters.length) {
+        const rndPosition = Math.floor(Math.random() * characters.length);
+        if (!usedPositions[rndPosition]) {
+            scrambledWord += characters[rndPosition];
+            usedPositions[rndPosition] = true;
+        }
+    }
+
+    return scrambledWord;
+}
+
+async function handleUserAnswer(user, answer) {
+    const currentTime = Date.now();
+    const responseTime = currentTime - questionStartTime;
+
+    let points = 0;
+    if (answer.toLowerCase() === jawabanquiz.toLowerCase()) {
+        if (attemptCounter === 1) {
+            points = 500;
+        } else if (attemptCounter === 2) {
+            points = 300;
+        } else if (attemptCounter === 3) {
+            points = 200;
+        } else {
+            points = 100;
+        }
+
+        if (!userData[user]) {
+            userData[user] = { score: 0, times: [] };
+        }
+
+        userData[user].score += points;
+        userData[user].times.push(responseTime);
+
+        await sendMessageToChat(`${user} answered correctly and earned ${points} points! Total score: ${userData[user].score}`);
+        attemptCounter = 0; // Reset the attempt counter
+        nomorquiz += 1;
+
+        if (nomorquiz < qs.length) {
+            await postQuestion();
+        } else {
+            clearInterval(quizInterval);
+            await sendMessageToChat('Quiz finished!');
+        }
+    }
+}
+
+
+
+
+//=============================================
 
    function addMessageToChatbox(username, message, avatarUrl) {
         const messageElement = document.createElement('div');
@@ -442,7 +481,9 @@ spinCheckbox.addEventListener('change', () => {
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
             await chat('syntax-error', 'your message here');
-            if (sendWelcomeMessages) {
+          const room = document.getElementById('room').value;
+         
+           if (sendWelcomeMessages) {
                 const welcomeMessage = `Hello world, I'm a web bot! Welcome, ${currentUsername}!`;
                 await sendMessage(welcomeMessage);
             }
@@ -467,7 +508,7 @@ spinCheckbox.addEventListener('change', () => {
                 name: roomName
             };
             await sendMessageToSocket(leaveMessage);
-            statusDiv.textContent = `You left the room: ${roomName}`;
+            joinlog.textContent = `You left the room: ${roomName}`;
         } else {
             statusDiv.textContent = 'Not connected to server';
         }
@@ -491,11 +532,6 @@ spinCheckbox.addEventListener('change', () => {
     }
 
 
-
-
-  
-
-
 async function sendCaptcha(captcha, captchaUrl) {
     if (isConnected) {
         const messageData = {
@@ -516,8 +552,6 @@ async function sendCaptcha(captcha, captchaUrl) {
         console.log('Not connected to server');  // Debug statement
     }
 }
-
-
 
 
 // Function to handle 'room_needs_captcha' event
@@ -551,18 +585,6 @@ function handleCaptcha(messageObj) {
     addCaptchaButtonListener();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 async function chat(to, body) {
     const packetID = generatePacketID();  // Assuming generatePacketID() generates a unique packet ID
     const message = {
@@ -595,14 +617,9 @@ function generatePacketID() {
 }
  
 
-
-
-
-
   function processReceivedMessage(message) {
     console.log('Received message:', message);
     debugBox.value += `${message}\n`;
-
 
     try {
         const jsonDict = JSON.parse(message);
@@ -632,9 +649,7 @@ function generatePacketID() {
             } else if (handler === 'friend_requests') {
                 onFriendRequest(jsonDict);
             } else if (handler === 'register_event') {
-                handleRegisterEvent(jsonDict);
-            } else if (handler === 'profile_other') {
-                onGetUserProfile(jsonDict);
+                handleRegisterEvent(jsonDict);  
             } else if (handler === 'followers_event') {
                 onFollowersList(jsonDict);
             } else if (handler === 'room_info') {
@@ -649,15 +664,7 @@ function generatePacketID() {
         console.error('Error processing received message:', ex);
     }
 }
-
-
-
-//  obj2 = New With {Key .handler = "room_message", Key .type = "image", Key .id = packetID, Key .url = imageUrl, Key .room = [to], Key .body = "", Key .length = "0"}
-           
-
-
-
-
+         
    async function sendimage(url) {
         if (isConnected) {
             const messageData = {
@@ -675,7 +682,6 @@ function generatePacketID() {
         }
     }
 
-
 async function handleprofother(messageObj) {
     try {
         console.log('Inside handleprofother');
@@ -683,27 +689,36 @@ async function handleprofother(messageObj) {
         const username = messageObj.type;
         const profurl = messageObj.photo_url;
         const views = messageObj.views;
-        const status = messageObj.status;
+        let status = messageObj.status; // Assume status contains HTML
         const country = messageObj.country;
         const creation = messageObj.reg_date;
         const friends = messageObj.roster_count;
         const gender = messageObj.gender;
-const gend ='';
-if(gender = '0' ){
-gend ='Unknown'
-}else if (gender = '1'){
-gend ='Male';
- }else if (gender = '2'){
-gend ='Female';  
-}
 
+        let gend = '';
+        if (gender == '0') {
+            gend = 'Unknown';
+        } else if (gender == '1') {
+            gend = 'Male';
+        } else if (gender == '2') {
+            gend = 'Female';
+        }
 
+        // Function to strip HTML tags
+        function stripHtml(html) {
+            let doc = new DOMParser().parseFromString(html, 'text/html');
+            return doc.body.textContent || "";
+        }
 
-       
+        // Convert status to plain text if it contains HTML tags
+        status = stripHtml(status);
+
+        // Send image if profurl exists
         if (profurl) {
             await sendimage(profurl);
         }
 
+        // Construct and send message
         if (username) {
             const messageData = `Username: ${username}\nStatus: ${status}\nViews: ${views}\nCountry: ${country}\nRegistration Date: ${creation}\nFriends: ${friends}\nGender: ${gend}`;
             await sendMessage(messageData);
@@ -714,8 +729,6 @@ gend ='Female';
         console.error('Error in handleprofother:', error);
     }
 }
-
-
 
      function handleMucList(messageObj) {
         const roomList = messageObj.rooms;
@@ -728,8 +741,6 @@ gend ='Female';
             roomListbox.appendChild(option);
         });
     }
-
-
 
     async function handleLoginEvent(messageObj) {
         const type = messageObj.type;
@@ -748,9 +759,6 @@ gend ='Female';
         }
     }
 
-
-
-
 async function handleRoomEvent(messageObj) {
     const type = messageObj.type;
     const userName = messageObj.username || 'Unknown';
@@ -760,8 +768,8 @@ async function handleRoomEvent(messageObj) {
   
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-      //  statusCount.textContent = `Total User: ${count}`;
-  statusCount.textContent = `you join the  ${roomName }`;
+      
+  joinlog.textContent = `You Join the  ${roomName }`;
         // Display room subject with proper HTML rendering
         displayRoomSubject(`Room subject: ${messageObj.subject} (by ${messageObj.subject_author})`);
 
@@ -773,19 +781,17 @@ async function handleRoomEvent(messageObj) {
         // Update the user list
         userList = messageObj.users;
         updateUserListbox();
-
+statusCount.textContent = `Total User: ${count}`;
 
  chatbox.removeChild(captchaImg);
       chatbox.removeChild(captchaTextbox);
       chatbox.removeChild(sendCaptchaButton);
 
-
-
     } else if (type === 'user_joined') {
         displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
-
- statusCount.textContent = `Total User: ${count}`;
-        if (userName === 'prateek') {
+            
+  
+       if (userName === 'prateek') {
             await setRole(userName, 'outcast');
         }
 
@@ -805,10 +811,14 @@ async function handleRoomEvent(messageObj) {
         // Add the new user to the user list
         userList.push({ username: userName, role });
         updateUserListbox();
+       statusCount.textContent = `Total User: ${count}`;
     } else if (type === 'user_left') {
         displayChatMessage({ from: userName, body: 'left the room.', role }, 'darkgreen');
  //statusCount.textContent = `Total User: ${count}`;
-        if (sendWelcomeMessages) {
+   //   userListbox.textContent = `Current User: ${count}`;
+             statusCount.textContent = `Total User: ${count}`;
+//  joinlog.textContent = `you join the  ${roomName }`;
+       if (sendWelcomeMessages) {
             const goodbyeMessage = `Bye ${userName}!`;
             await sendMessage(goodbyeMessage);
         }
@@ -835,7 +845,6 @@ if (trimmedBody.startsWith('pv@')) {
  //   await sendMessage(`ok ${from}`);
     
     const username = trimmedBody.slice(3); // Extract the username after 'pv@'
-//messageinput.value = username;
 
     console.log(`Extracted username: ${username}`);
     
@@ -852,25 +861,15 @@ if (trimmedBody.startsWith('pv@')) {
     console.log(`Message does not start with 'pv@': ${trimmedBody}`);
 }
 
-
-
        //==============
-
-const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');   
-  if (activateQuizCheckbox.checked) {
-                    const userMessage = body.trim().toLowerCase();
-
-                    if (currentAnswer && userMessage === currentAnswer.toLowerCase()) {
-                        const score = scores[attempts - 1] || 100; // Default to 100 if out of score range
-                        await sendMessage(`Correct! You earn ${score} points.`);
-                        attempts = maxAttempts; // Exit the current question loop
-                        return; // Stop processing this message
-                    }
-                }
-
-//==========================
-
-
+ const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
+        if (activateQuizCheckbox && activateQuizCheckbox.checked) {
+if (from === usernameInput.value){
+}else{
+            const userMessage = body.trim().toLowerCase();
+            await handleUserAnswer(from, userMessage);
+}
+        }
 
  const masterUsernames = masterInput.value.split('#').map(username => username.trim());
 
@@ -935,11 +934,6 @@ const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
   console.log('Command from unauthorized user:', from);
 
 
-
-
-
-
-
 }
 // Dim obj2 As Object = New With {Key .handler = "profile_other", Key .id = Me.PacketID, Key .type = username}
 
@@ -967,19 +961,36 @@ const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
         });
 
 
-}else   if (type === 'gift') {
+}else  if (type === 'gift') {
     const toRoom = messageObj.to_room;
+    const toId = messageObj.to_id;
+    const resources = messageObj.resources;
+    const repeats = messageObj.repeats;
+    const gift = messageObj.gift;
+    const animation = messageObj.animation;
+    const room = messageObj.room;
+    const userId = messageObj.user_id;
     const to = messageObj.to;
     const from = messageObj.from;
-    const gift = messageObj.gift;
+    const timestamp = messageObj.timestamp;
+    const id = messageObj.id;
 
     displayChatMessage({
         toRoom: toRoom,
+        toId: toId,
+        resources: resources,
+        repeats: repeats,
+        gift: gift,
+        animation: animation,
+        room: room,
+        userId: userId,
         to: to,
         from: from,
-        gift: gift
+        timestamp: timestamp,
+        id: id
     });
 }
+
  else      if (type === 'room_needs_captcha') {
     
  handleCaptcha(messageObj);
@@ -1021,16 +1032,8 @@ const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
 }
 
 
-
-
-
-
-
-
-
-
 function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, bodyurl, role, avatar } = messageObj;
+    const { from, body, bodyurl, role, avatar, type } = messageObj;
     const newMessage = document.createElement('div');
     newMessage.style.display = 'flex';
     newMessage.style.alignItems = 'center';
@@ -1057,32 +1060,53 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(coloredFrom);
     }
 
-    // Check if the bodyurl is an audio file by checking the file extension
-    if (bodyurl && bodyurl.match(/\.(mp3|wav|ogg|m4a)$/i)) {
-        const audioElement = document.createElement('audio');
-        audioElement.src = bodyurl;
-        audioElement.controls = true; // Enable built-in controls for the audio player
-        newMessage.appendChild(audioElement);
-    } 
-    // If the bodyurl is an image URL
-    else if (bodyurl && bodyurl.match(/\.(jpeg|jpg|gif|png)$/i)) {
-        const imageElement = document.createElement('img');
-        imageElement.src = bodyurl;
-        imageElement.style.maxWidth = '140px'; // Set maximum width for the image
-        newMessage.appendChild(imageElement);
-    } 
-    // For regular text messages
-    else {
-        const messageBody = document.createElement('span');
-        messageBody.textContent = body;
-        messageBody.style.color = color;
-        newMessage.appendChild(messageBody);
+    // Handle different message types
+    if (type === 'gift') {
+        // Construct the gift message display
+        const giftMessage = document.createElement('span');
+        giftMessage.innerHTML = `
+            Gift from ${messageObj.from} to ${messageObj.to} in ${messageObj.toRoom}<br>
+            Gift: ${messageObj.gift}<br>
+            Resources: ${messageObj.resources}<br>
+            Repeats: ${messageObj.repeats}<br>
+            Animation: ${messageObj.animation}<br>
+            Room: ${messageObj.room}<br>
+            User ID: ${messageObj.userId}<br>
+            Timestamp: ${new Date(parseInt(messageObj.timestamp)).toLocaleString()}<br>
+            ID: ${messageObj.id}
+        `;
+        giftMessage.style.color = color;
+        newMessage.appendChild(giftMessage);
+    } else {
+        // Check if the bodyurl is an audio file by checking the file extension
+        if (bodyurl && bodyurl.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+            const audioElement = document.createElement('audio');
+            audioElement.src = bodyurl;
+            audioElement.controls = true; // Enable built-in controls for the audio player
+            newMessage.appendChild(audioElement);
+        } 
+        // If the bodyurl is an image URL
+        else if (bodyurl && bodyurl.match(/\.(jpeg|jpg|gif|png)$/i)) {
+            const imageElement = document.createElement('img');
+            imageElement.src = bodyurl;
+            imageElement.style.maxWidth = '140px'; // Set maximum width for the image
+            newMessage.appendChild(imageElement);
+        } 
+        // For regular text messages
+        else {
+            const messageBody = document.createElement('span');
+            messageBody.textContent = body;
+            messageBody.style.color = color;
+            newMessage.appendChild(messageBody);
+        }
     }
 
     // Append the new message to the chatbox and scroll to the bottom
+    const chatbox = document.getElementById('chatbox');
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
+
 
 function displayRoomSubject(subject) {
     const newMessage = document.createElement('div');
@@ -1090,17 +1114,6 @@ function displayRoomSubject(subject) {
     chatbox.appendChild(newMessage);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 function getRoleColor(role) {
     switch (role) {
@@ -1184,8 +1197,6 @@ async function setRole(username, role) {
     });
 }
 
-
-
      async function getChatroomList(mucType, packetID, mucPageNum) {
         const listRequest = {
             handler: 'muc_list',
@@ -1195,7 +1206,6 @@ async function setRole(username, role) {
         };
         await sendMessageToSocket(listRequest);
     }
-
 
 socket.on('message', (messageObj) => {
     const type = messageObj.type;
@@ -1213,55 +1223,12 @@ socket.on('message', (messageObj) => {
 function handleRoomInfoResponse(response) {
     const roomListBox = document.getElementById('roomlistbox');
     roomListBox.innerHTML = ''; // Clear previous list
-
     response.rooms.forEach(room => {
         const roomItem = document.createElement('li');
         roomItem.textContent = room.name; // Assuming room object has a name property
         roomListBox.appendChild(roomItem);
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Define activateQuiz function
-function activateQuiz() {
-    console.log('Quiz activated');
-    startQuizWithTimer();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
