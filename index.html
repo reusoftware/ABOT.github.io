@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ABOT WEB BOT</title>
+    <title>A3RBOT</title>
     <script <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
    
     <style>
@@ -103,13 +103,13 @@
                     <button id="leaveRoomButton">Leave Room</button>
                     <select id="roomListbox"></select>
 
-                    <div id="count"></div>
+                    <div id="joinlog"></div>
  
                 </div>
             </div>
             
             <div>
-                <input type="text" id="master" placeholder="Type your master username here...">
+                <input type="text" id="master" placeholder="masters split #">
                 <label for="welcomeCheckbox">Send Welcome Messages</label>
                 <input type="checkbox" id="welcomeCheckbox">
                 <label for="spinCheckbox">Spin</label>
@@ -121,7 +121,10 @@
             </div>
               
  
+<form id="quizForm">
+    <textarea id="questionAnswerInput" rows="5" cols="50"></textarea>
 
+</form>
 
 
 
@@ -134,7 +137,8 @@
             <div class="chat-container">
                 <div id="chatbox"></div>
                 <div class="user-list">
-                    <label for="userListbox">Current Users:</label>
+                    <div id="count"></div>
+                    
                     <select id="userListbox" size="10" multiple></select>
                     <ul id="roomlistbox"></ul>
                 </div>
@@ -425,7 +429,254 @@
         <span class="emoji-item">🌊</span>
         <span class="emoji-item">🌫️</span>
 
-        <!-- Add more emojis as needed -->
+       <!-- Food & Drink -->
+<span class="emoji-item">🍇</span>
+<span class="emoji-item">🍈</span>
+<span class="emoji-item">🍉</span>
+<span class="emoji-item">🍊</span>
+<span class="emoji-item">🍋</span>
+<span class="emoji-item">🍌</span>
+<span class="emoji-item">🍍</span>
+<span class="emoji-item">🥭</span>
+<span class="emoji-item">🍎</span>
+<span class="emoji-item">🍏</span>
+<span class="emoji-item">🍐</span>
+<span class="emoji-item">🍑</span>
+<span class="emoji-item">🍒</span>
+<span class="emoji-item">🍓</span>
+<span class="emoji-item">🫐</span>
+<span class="emoji-item">🥝</span>
+<span class="emoji-item">🍅</span>
+<span class="emoji-item">🫒</span>
+<span class="emoji-item">🥥</span>
+<span class="emoji-item">🥑</span>
+<span class="emoji-item">🍆</span>
+<span class="emoji-item">🥔</span>
+<span class="emoji-item">🥕</span>
+<span class="emoji-item">🌽</span>
+<span class="emoji-item">🌶️</span>
+<span class="emoji-item">🫑</span>
+<span class="emoji-item">🥒</span>
+<span class="emoji-item">🥬</span>
+<span class="emoji-item">🥦</span>
+<span class="emoji-item">🧄</span>
+<span class="emoji-item">🧅</span>
+<span class="emoji-item">🍄</span>
+<span class="emoji-item">🥜</span>
+<span class="emoji-item">🌰</span>
+<span class="emoji-item">🍞</span>
+<span class="emoji-item">🥐</span>
+<span class="emoji-item">🥖</span>
+<span class="emoji-item">🫓</span>
+<span class="emoji-item">🥨</span>
+<span class="emoji-item">🥯</span>
+<span class="emoji-item">🥞</span>
+<span class="emoji-item">🧇</span>
+<span class="emoji-item">🧀</span>
+<span class="emoji-item">🍖</span>
+<span class="emoji-item">🍗</span>
+<span class="emoji-item">🥩</span>
+<span class="emoji-item">🥓</span>
+<span class="emoji-item">🍔</span>
+<span class="emoji-item">🍟</span>
+<span class="emoji-item">🍕</span>
+<span class="emoji-item">🌭</span>
+<span class="emoji-item">🥪</span>
+<span class="emoji-item">🌮</span>
+<span class="emoji-item">🌯</span>
+<span class="emoji-item">🫔</span>
+<span class="emoji-item">🥙</span>
+<span class="emoji-item">🧆</span>
+<span class="emoji-item">🥚</span>
+<span class="emoji-item">🍳</span>
+<span class="emoji-item">🥘</span>
+<span class="emoji-item">🍲</span>
+<span class="emoji-item">🫕</span>
+<span class="emoji-item">🥣</span>
+<span class="emoji-item">🥗</span>
+<span class="emoji-item">🍿</span>
+<span class="emoji-item">🧈</span>
+<span class="emoji-item">🧂</span>
+<span class="emoji-item">🥫</span>
+<span class="emoji-item">🍱</span>
+<span class="emoji-item">🍘</span>
+<span class="emoji-item">🍙</span>
+<span class="emoji-item">🍚</span>
+<span class="emoji-item">🍛</span>
+<span class="emoji-item">🍜</span>
+<span class="emoji-item">🍝</span>
+<span class="emoji-item">🍠</span>
+<span class="emoji-item">🍢</span>
+<span class="emoji-item">🍣</span>
+<span class="emoji-item">🍤</span>
+<span class="emoji-item">🍥</span>
+<span class="emoji-item">🥮</span>
+<span class="emoji-item">🍡</span>
+<span class="emoji-item">🥟</span>
+<span class="emoji-item">🥠</span>
+<span class="emoji-item">🥡</span>
+<span class="emoji-item">🦪</span>
+<span class="emoji-item">🍦</span>
+<span class="emoji-item">🍧</span>
+<span class="emoji-item">🍨</span>
+<span class="emoji-item">🍩</span>
+<span class="emoji-item">🍪</span>
+<span class="emoji-item">🎂</span>
+<span class="emoji-item">🍰</span>
+<span class="emoji-item">🧁</span>
+<span class="emoji-item">🥧</span>
+<span class="emoji-item">🍫</span>
+<span class="emoji-item">🍬</span>
+<span class="emoji-item">🍭</span>
+<span class="emoji-item">🍮</span>
+<span class="emoji-item">🍯</span>
+<span class="emoji-item">🍼</span>
+<span class="emoji-item">🥛</span>
+<span class="emoji-item">☕</span>
+<span class="emoji-item">🫖</span>
+<span class="emoji-item">🍵</span>
+<span class="emoji-item">🍶</span>
+<span class="emoji-item">🍾</span>
+<span class="emoji-item">🍷</span>
+<span class="emoji-item">🍸</span>
+<span class="emoji-item">🍹</span>
+<span class="emoji-item">🍺</span>
+<span class="emoji-item">🍻</span>
+<span class="emoji-item">🥂</span>
+<span class="emoji-item">🥃</span>
+<span class="emoji-item">🥤</span>
+<span class="emoji-item">🧃</span>
+<span class="emoji-item">🧉</span>
+<span class="emoji-item">🧊</span>
+
+<!-- Travel & Places -->
+<span class="emoji-item">🛖</span>
+<span class="emoji-item">🏠</span>
+<span class="emoji-item">🏡</span>
+<span class="emoji-item">🏢</span>
+<span class="emoji-item">🏣</span>
+<span class="emoji-item">🏤</span>
+<span class="emoji-item">🏥</span>
+<span class="emoji-item">🏦</span>
+<span class="emoji-item">🏨</span>
+<span class="emoji-item">🏩</span>
+<span class="emoji-item">🏪</span>
+<span
+<!-- Travel & Places (continued) -->
+<span class="emoji-item">🏫</span>
+<span class="emoji-item">🏬</span>
+<span class="emoji-item">🏭</span>
+<span class="emoji-item">🏯</span>
+<span class="emoji-item">🏰</span>
+<span class="emoji-item">💒</span>
+<span class="emoji-item">🗼</span>
+<span class="emoji-item">🗽</span>
+<span class="emoji-item">⛪</span>
+<span class="emoji-item">🕌</span>
+<span class="emoji-item">🛕</span>
+<span class="emoji-item">🕍</span>
+<span class="emoji-item">⛩️</span>
+<span class="emoji-item">🕋</span>
+<span class="emoji-item">⛲</span>
+<span class="emoji-item">⛺</span>
+<span class="emoji-item">🌁</span>
+<span class="emoji-item">🌃</span>
+<span class="emoji-item">🏙️</span>
+<span class="emoji-item">🌄</span>
+<span class="emoji-item">🌅</span>
+<span class="emoji-item">🌆</span>
+<span class="emoji-item">🌇</span>
+<span class="emoji-item">🌉</span>
+<span class="emoji-item">♨️</span>
+<span class="emoji-item">🎠</span>
+<span class="emoji-item">🎡</span>
+<span class="emoji-item">🎢</span>
+<span class="emoji-item">💈</span>
+<span class="emoji-item">🎪</span>
+<span class="emoji-item">🚂</span>
+<span class="emoji-item">🚃</span>
+<span class="emoji-item">🚄</span>
+<span class="emoji-item">🚅</span>
+<span class="emoji-item">🚆</span>
+<span class="emoji-item">🚇</span>
+<span class="emoji-item">🚈</span>
+<span class="emoji-item">🚉</span>
+<span class="emoji-item">🚊</span>
+<span class="emoji-item">🚝</span>
+<span class="emoji-item">🚞</span>
+<span class="emoji-item">🚋</span>
+<span class="emoji-item">🚌</span>
+<span class="emoji-item">🚍</span>
+<span class="emoji-item">🚎</span>
+<span class="emoji-item">🚐</span>
+<span class="emoji-item">🚑</span>
+<span class="emoji-item">🚒</span>
+<span class="emoji-item">🚓</span>
+<span class="emoji-item">🚔</span>
+<span class="emoji-item">🚕</span>
+<span class="emoji-item">🚖</span>
+<span class="emoji-item">🚗</span>
+<span class="emoji-item">🚘</span>
+<span class="emoji-item">🚙</span>
+<span class="emoji-item">🚚</span>
+<span class="emoji-item">🚛</span>
+<span class="emoji-item">🚜</span>
+<span class="emoji-item">🏎️</span>
+<span class="emoji-item">🏍️</span>
+<span class="emoji-item">🛵</span>
+<span class="emoji-item">🦽</span>
+<span class="emoji-item">🦼</span>
+<span class="emoji-item">🛺</span>
+<span class="emoji-item">🚲</span>
+<span class="emoji-item">🛴</span>
+<span class="emoji-item">🛹</span>
+<span class="emoji-item">🛼</span>
+<span class="emoji-item">🚏</span>
+<span class="emoji-item">🛣️</span>
+<span class="emoji-item">🛤️</span>
+<span class="emoji-item">🛢️</span>
+<span class="emoji-item">⛽</span>
+<span class="emoji-item">🚨</span>
+<span class="emoji-item">🚥</span>
+<span class="emoji-item">🚦</span>
+<span class="emoji-item">🛑</span>
+<span class="emoji-item">🚧</span>
+<span class="emoji-item">⚓</span>
+<span class="emoji-item">⛵</span>
+<span class="emoji-item">🛶</span>
+<span class="emoji-item">🚤</span>
+<span class="emoji-item">🛳️</span>
+<span class="emoji-item">⛴️
+<!-- Travel & Places (continued) -->
+<span class="emoji-item">⛴️</span>
+<span class="emoji-item">🛥️</span>
+<span class="emoji-item">🚢</span>
+<span class="emoji-item">✈️</span>
+<span class="emoji-item">🛩️</span>
+<span class="emoji-item">🛫</span>
+<span class="emoji-item">🛬</span>
+<span class="emoji-item">🪂</span>
+<span class="emoji-item">🪁</span>
+<span class="emoji-item">🚁</span>
+<span class="emoji-item">🛰️</span>
+<span class="emoji-item">🚀</span>
+<span class="emoji-item">🛸</span>
+<span class="emoji-item">🌠</span>
+<span class="emoji-item">🌌</span>
+<span class="emoji-item">🎇</span>
+<span class="emoji-item">🎆</span>
+<span class="emoji-item">🌈</span>
+<span class="emoji-item">🌅</span>
+<span class="emoji-item">🌄</span>
+<span class="emoji-item">🌠</span>
+<span class="emoji-item">🌟</span>
+
+
+
+
+
+
+    
     </div>
 
 
