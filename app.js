@@ -837,7 +837,7 @@ if (masterInput.value === from) {
     } else if (body.startsWith('pv@')) {
         // Handle profile view command
     } else if (body.startsWith('.help')) {
-        const messageData = `===FOR BOT OWNER COMMANDS===\n+qs/-qs = For Scramble Quiz.\n+wc/-wc = For Welcome.\n+spin/-spin = For Spin.\n===FOR USER COMMANDS===\npv@username = to view user profile.\n.s = to spin.\n.bt = to view Best Time User Answer on quiz.\n.win = to view whos winner on quiz\n.top = to view top10 on quiz.`;
+        const messageData = `===FOR BOT OWNER COMMANDS===\n+qs/-qs = For Scramble Quiz.\n+wc/-wc = For Welcome.\n+spin/-spin = For Spin.\nmas+username = to add master\nmas-username = to remove master\nmaslist = to get master list.\n===FOR USER COMMANDS===\npv@username = to view user profile.\n.s = to spin.\n.bt = to view Best Time User Answer on quiz.\n.win = to view whos winner on quiz\n.top = to view top10 on quiz.`;
         await sendMessage(messageData);
     } else if (body.startsWith('+spin')) {
         spinCheckbox.checked = true;
