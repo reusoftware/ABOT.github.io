@@ -32,7 +32,8 @@ let chatbox = document.getElementById('chatbox');
     const debugBox = document.getElementById('debugBox');
     const emojiList = document.getElementById('emojiList');
     const messageInput = document.getElementById('message');
- 
+ //const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
+     
   const targetInput = document.getElementById('target');
     const banButton = document.getElementById('banButton');
     const kickButton = document.getElementById('kickButton');
@@ -751,7 +752,7 @@ async function handleRoomEvent(messageObj) {
   joinlog.textContent = `You Join the  ${roomName }`;
         // Display room subject with proper HTML rendering
         displayRoomSubject(`Room subject: ${messageObj.subject} (by ${messageObj.subject_author})`);
- await chat('syntax-error', `join in  ${roomName }`);
+
         // Display list of users with roles
         messageObj.users.forEach(user => {
             displayChatMessage({ from: user.username, body: `joined the room as ${user.role}`, role: user.role }, 'green');
@@ -816,141 +817,133 @@ statusCount.textContent = `Total User: ${count}`;
         role: messageObj.role,
         avatar: messageObj.avatar_url
     });
-//===============
+
 
 const trimmedBody = body.trim();
 
-// getBestTimeUser()
-//getWinner()
-//getTop10Users()
-
-if (trimmedBody.startsWith('.bt')) {
-await sendBestTime();
-}
-if (trimmedBody.startsWith('.top')) {
-await getTop10Users();
-}
-if (trimmedBody.startsWith('.win')) {
-await getWinner();
-}
-
-
-
-
-
-
-if (trimmedBody.startsWith('pv@')) {
-    console.log(`Detected 'pv@' prefix in message: ${trimmedBody}`);
- //   await sendMessage(`ok ${from}`);
-    
-    const username = trimmedBody.slice(3); // Extract the username after 'pv@'
-
-    console.log(`Extracted username: ${username}`);
-    
-    const packetID = generatePacketID(); // Assuming you have a function to generate packet IDs
-    const message = {
-        handler: 'profile_other',
-        type: username,
-        id: packetID
-    };
-    console.log(`Sending profile_other message: ${JSON.stringify(message)}`);
-    
-    await sendMessageToSocket(message);
-} else {
-    console.log(`Message does not start with 'pv@': ${trimmedBody}`);
-}
-
-       //==============
- const activateQuizCheckbox = document.getElementById('activateQuizCheckbox');
-        if (activateQuizCheckbox && activateQuizCheckbox.checked) {
-if (from === usernameInput.value){
-}else{
+if (masterInput.value === from) {
+    if (body.startsWith('+qs')) {
+        await activateQuiz();
+    } else if (body.startsWith('-qs')) {
+        await deactivateQuiz();
+    } else if (body.startsWith('+wc')) {
+        welcomeCheckbox.checked = true;
+        sendWelcomeMessages = true;
+        await sendMessage('Welcome messages Activated.');
+    } else if (body.startsWith('-wc')) {
+        welcomeCheckbox.checked = false;
+        sendWelcomeMessages = false;
+        await sendMessage('Welcome messages Deactivated.');
+    } else if (body.startsWith('pv@')) {
+        // Handle profile view command
+    } else if (body.startsWith('.help')) {
+        const messageData = `===FOR BOT OWNER COMMANDS===\n+qs/-qs = For Scramble Quiz.\n+wc/-wc = For Welcome.\n+spin/-spin = For Spin.\n===FOR USER COMMANDS===\npv@username = to view user profile.\n.s = to spin.\n.bt = to view Best Time User Answer on quiz.\n.win = to view whos winner on quiz\n.top = to view top10 on quiz.`;
+        await sendMessage(messageData);
+    } else if (body.startsWith('+spin')) {
+        spinCheckbox.checked = true;
+        sendspinMessages = true;
+        await sendMessage('Spin Activated.');
+    } else if (body.startsWith('-spin')) {
+        spinCheckbox.checked = false;
+        sendspinMessages = false;
+        await sendMessage('Spin Deactivated.');
+    } else if (body.startsWith('mas+')) {
+        const masuser = trimmedBody.slice(4).trim(); // Extract the username after 'mas+'
+        console.log(`Extracted username: ${masuser}`);
+        if (masuser) {
+            if (addToMasterList(masuser)) {
+                await sendMessage(`${masuser} added to the master list.`);
+            } else {
+                await sendMessage(`${masuser} is already in the master list.`);
+            }
+        } else {
+            await sendMessage('Please provide a valid username.');
+        }
+    } else if (body.startsWith('mas-')) {
+        const masuser = trimmedBody.slice(4).trim(); // Extract the username after 'mas-'
+        console.log(`Extracted username: ${masuser}`);
+        if (masuser) {
+            if (removeFromMasterList(masuser)) {
+                await sendMessage(`${masuser} removed from the master list.`);
+            } else {
+                await sendMessage(`${masuser} is not in the master list.`);
+            }
+        } else {
+            await sendMessage('Please provide a valid username.');
+        }
+    } else if (body === 'maslist') {
+        if (masterList.length > 0) {
+            await sendMessage(`Master List: ${masterList.join(', ')}`);
+        } else {
+            await sendMessage('Master List is empty.');
+        }
+  
+    }
+}// else {
+   
+  if (trimmedBody.startsWith('pv@')) {
+        console.log(`Detected 'pv@' prefix in message: ${trimmedBody}`);
+        const username = trimmedBody.slice(3).trim(); // Extract the username after 'pv@'
+        console.log(`Extracted username: ${username}`);
+        const packetID = generatePacketID(); // Assuming you have a function to generate packet IDs
+        const message = {
+            handler: 'profile_other',
+            type: username,
+            id: packetID
+        };
+        console.log(`Sending profile_other message: ${JSON.stringify(message)}`);
+        await sendMessageToSocket(message);
+    } else if (activateQuizCheckbox && activateQuizCheckbox.checked) {
+        if (from !== usernameInput.value) {
             const userMessage = body.trim().toLowerCase();
             await handleUserAnswer(from, userMessage);
-}
         }
-
- const masterUsernames = masterInput.value.split('#').map(username => username.trim());
-
-    if (masterUsernames.includes(from)) {
-
-
- if (body === 'help') {
-  const messageData = `===FOR MASTER COMMANDS===\n+qs/-qs = For Scramble Quiz.\n+wc/-wc = For Welcome.\n+spin/-spin = For Spin.\n===FOR USER COMMANDS===\npv@username = to view user profile.\n.s = to spin.\n.bt = to view Best Time User Answer on quiz.\n.win = to view whos winner on quiz\n.top = to view top10 on quiz.`;
-            await sendMessage(messageData);
-}
-
-
-
-
-
-
- if (body === '+qs') {
-        await activateQuiz();
-    } else if (body === '-qs') {
-        await deactivateQuiz();
+    } else if (trimmedBody.startsWith('.bt')) {
+        await sendBestTime();
+    } else if (trimmedBody.startsWith('.top')) {
+        await getTop10Users();
+    } else if (trimmedBody.startsWith('.win')) {
+        await getWinner();
+    } else if (sendspinMessages && body === '.s') {
+        const responses = [
+            `Let's Drink ${from} (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
+            `kick`,
+            `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
+            `${from} you got ☔ Umbrella from me`,
+            `You got a pair of shoes 👟👟 ${from}`,
+            `Dress and Pants 👕 👖 for you ${from}`,
+            `💻 Laptop for you ${from}`,
+            `Great! ${from} you can travel now ✈️`,
+            `${from} you have an apple 🍎`,
+            `kick`,
+            `Carrots for you 🥕 ${from}`,
+            `${from} you got an ice cream 🍦`,
+            `🍺 🍻 Beer for you ${from}`,
+            `You wanna game with me 🏀 ${from}`,
+            `Guitar 🎸 for you ${from}`,
+            `For you❤️ ${from}`
+        ];
+        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+        if (randomResponse === 'kick') {
+            await sendMessage(`Sorry! You Got Kick ${from}`);
+            await kickUser(from);
+        } else {
+            await sendMessage(randomResponse);
+        }
     }
+//}
 
-    if (body === '+wc') {
-     
-            welcomeCheckbox.checked = true;
-            sendWelcomeMessages = true;
-            await sendMessage('Welcome messages activated.');
-     
-    } else if (body === '-wc') {
-       
-            welcomeCheckbox.checked = false;
-            sendWelcomeMessages = false;
-            await sendMessage('Welcome messages deactivated.');
-      
-    }
-
-    if (body === '+spin') {
-     
-            spinCheckbox.checked = true;
-            sendspinMessages = true;
-            await sendMessage('Spin Activated.');
-      
-    } else if (body === '-spin') {
-      
-            spinCheckbox.checked = false;
-            sendspinMessages = false;
-            await sendMessage('Spin Deactivated.');
-      
-    }
-
-    if (sendspinMessages && body === '.s') {
-                const responses = [
-                    `Let's Drink ${from} (っ＾▿＾)۶🍸🌟🍺٩(˘◡˘ )`,
-                    `kick`,
-                    `Let's Eat ( ◑‿◑)ɔ┏🍟--🍔┑٩(^◡^ ) ${from}`,
-                    `${from} you got ☔ Umbrella from me`,
-                    `You got a pair of shoes 👟👟 ${from}`,
-                    `Dress and Pants 👕 👖 for you ${from}`,
-                    `💻 Laptop for you ${from}`,
-                    `Great! ${from} you can travel now ✈️`,
-                    `${from} you have an apple 🍎`,
-                    `kick`,
-                    `Carrots for you 🥕 ${from}`,
-                    `${from} you got an ice cream 🍦`,
-                    `🍺 🍻 Beer for you ${from}`,
-                    `You wanna game with me 🏀 ${from}`,
-                    `Guitar 🎸 for you ${from}`,
-                    `For you❤️ ${from}`
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                if (randomResponse === 'kick') {
-                    await sendMessage(`Sorry! You Got Kick ${from}`);
-                    await kickUser(from);
-                } else {
-                    await sendMessage(randomResponse);
-                }
-
-      }      } else {
-  console.log('Command from unauthorized user:', from);
+//================================
 
 
-}
+ 
+
+
+
+
+
+
+
 // Dim obj2 As Object = New With {Key .handler = "profile_other", Key .id = Me.PacketID, Key .type = username}
 
     } else if (type === 'image') {
@@ -1047,6 +1040,37 @@ if (from === usernameInput.value){
 
 }
 
+//masterlist================
+// Initialize masterList from localStorage
+let masterList = JSON.parse(localStorage.getItem('masterList')) || [];
+
+// Function to add a user to the master list
+function addToMasterList(username) {
+    if (!masterList.includes(username)) {
+        masterList.push(username);
+        localStorage.setItem('masterList', JSON.stringify(masterList)); // Save to localStorage
+        return true; // Indicates successful addition
+    }
+    return false; // Indicates user already in the list
+}
+
+// Function to remove a user from the master list
+function removeFromMasterList(username) {
+    const index = masterList.indexOf(username);
+    if (index !== -1) {
+        masterList.splice(index, 1);
+        localStorage.setItem('masterList', JSON.stringify(masterList)); // Save to localStorage
+        return true; // Indicates successful removal
+    }
+    return false; // Indicates user not found in the list
+}
+
+// Function to check if a user is in the master list
+function isInMasterList(username) {
+    return masterList.includes(username);
+}
+
+//============================
 
 function displayChatMessage(messageObj, color = 'black') {
     const { from, body, bodyurl, role, avatar, type } = messageObj;
@@ -1245,6 +1269,11 @@ function handleRoomInfoResponse(response) {
         roomListBox.appendChild(roomItem);
     });
 }
+
+
+
+
+
 
 
 
