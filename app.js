@@ -821,7 +821,7 @@ statusCount.textContent = `Total User: ${count}`;
 
 const trimmedBody = body.trim();
 
-   if (masterInput.value === from && isInMasterList(from)) {
+   if (masterInput.value === from || isInMasterList(from)) {
     if (body.startsWith('+qs')) {
         await activateQuiz();
     } else if (body.startsWith('-qs')) {
