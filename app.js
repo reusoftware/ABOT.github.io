@@ -86,11 +86,24 @@ kickButton.addEventListener('click', async () => {
         await connectWebSocket(username, password);
     });
 
-    joinRoomButton.addEventListener('click', async () => {
-        const room = document.getElementById('room').value;
-        await joinRoom(room);
-    });
+   document.getElementById('joinRoomButton').addEventListener('click', async () => {
+    const roomInput = document.getElementById('room');
+    const selectedRoomOption = document.getElementById('roomListbox').value;
 
+    let room = '';
+    if (selectedRoomOption) {
+        room = selectedRoomOption; // Join selected room from the dropdown list
+    } else {
+        room = roomInput.value.trim(); // Join room entered in the input field
+    }
+
+    if (room) {
+        await joinRoom(room);
+    } else {
+        console.error('Room name cannot be empty.');
+        // Handle error or inform user accordingly
+    }
+});
     leaveRoomButton.addEventListener('click', async () => {
         const room = document.getElementById('room').value;
         await leaveRoom(room);
@@ -292,48 +305,7 @@ async function handleUserAnswer(user, answer) {
 
 
 
-async function getTop10Users() {
-    const users = Object.keys(userData);
-    users.sort((a, b) => userData[b].score - userData[a].score);
 
-    const top10Users = users.slice(0, 10);
-    let message = 'Top 10 Users:\n';
-    top10Users.forEach((user, index) => {
-        message += `${index + 1}. ${user}: ${userData[user].score} points\n`;
-    });
-    await sendMessageToChat(message);
-}
-
-async function getWinner() {
-    const users = Object.keys(userData);
-    if (users.length === 0) {
-        await sendMessageToChat('No users have participated yet.');
-        return;
-    }
-
-    users.sort((a, b) => userData[b].score - userData[a].score);
-    const winner = users[0];
-    await sendMessageToChat(`The user with the highest score is ${winner} with ${userData[winner].score} points.`);
-}
-
-async function sendBestTime() {
-    let bestUser = null;
-    let bestTime = Infinity;
-
-    for (const [user, data] of Object.entries(userData)) {
-        const minTime = Math.min(...data.times);
-        if (minTime < bestTime) {
-            bestTime = minTime;
-            bestUser = user;
-        }
-    }
-
-    if (bestUser !== null) {
-        await sendMessageToChat(`The user with the best answer time is ${bestUser} with a time of ${bestTime / 1000} seconds.`);
-    } else {
-        await sendMessageToChat('No answers recorded yet.');
-    }
-}
 
 
 
@@ -389,12 +361,7 @@ async function deactivateQuiz() {
 spinCheckbox.addEventListener('change', () => {
         sendspinMessages = spinCheckbox.checked;
     });
-    roomListbox.addEventListener('change', async () => {
-        const selectedRoom = roomListbox.value;
-        if (selectedRoom) {
-            await joinRoom(selectedRoom);
-        }
-    });
+ 
 
     emojiList.addEventListener('click', (event) => {
         if (event.target.classList.contains('emoji-item')) {
@@ -630,8 +597,6 @@ function generatePacketID() {
                 onFriendRequest(jsonDict);
             } else if (handler === 'register_event') {
                 handleRegisterEvent(jsonDict);  
-            } else if (handler === 'followers_event') {
-                onFollowersList(jsonDict);
             } else if (handler === 'room_info') {
               handleMucList(jsonDict);
  } else if (handler === 'profile_other') {
@@ -641,7 +606,7 @@ function generatePacketID() {
             }
         }
     } catch (ex) {
-        console.error('Error processing received message:', ex);
+     //   console.error('Error processing received message:', ex);
     }
 }
          
@@ -710,34 +675,172 @@ async function handleprofother(messageObj) {
     }
 }
 
-     function handleMucList(messageObj) {
+        function handleMucList(messageObj) {
         const roomList = messageObj.rooms;
         roomListbox.innerHTML = ''; // Clear the current list
 
         roomList.forEach(room => {
             const option = document.createElement('option');
             option.value = room.name;
-            option.textContent = `${room.name} (${room.count} users)`;
+         option.textContent = `${room.name} (${room.count} users)`;
+
             roomListbox.appendChild(option);
         });
     }
 
-    async function handleLoginEvent(messageObj) {
-        const type = messageObj.type;
-        if (type === 'success') {
-            statusDiv.textContent = 'Online';
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
+  
 
-            const mucType = "public_rooms"; 
-            const packetID = generatePacketID();
-            const mucPageNum = 1; 
+async function handleLoginEvent(messageObj) {
+    const type = messageObj.type;
+    if (type === 'success') {
+        statusDiv.textContent = 'Online';
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
 
-            await getChatroomList(mucType, packetID, mucPageNum);
-            rejoinRoomIfNecessary(); 
+    
+        await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
+
+        const mucType = MucType.public; 
+        const packetID = generatePacketID();
+        const mucPageNum = 0;
+
+        try {
+            const publicRooms = await getChatroomList(mucType, packetID, mucPageNum);
+          
+            displayPublicRooms(publicRooms);
+            rejoinRoomIfNecessary(); // Example function to rejoin a room if necessary
+        } catch (error) {
+            console.error('Error fetching public chatrooms:', error);
+            // Handle error (e.g., display error message to the user)
         }
     }
+}
+
+
+
+
+const MucType = {
+    search: 'search',
+    public: 'public_rooms',
+    trending: 'trending',
+    favourite: 'favourite',
+    streaming: 'streaming',
+    private: 'private_rooms'
+};
+
+
+async function getChatroomList(mucType, packetID, mucPageNum = 1) {
+    const listRequest = {
+        handler: 'room_info',
+        type: mucType,
+        id: packetID,
+        page: mucPageNum.toString()
+    };
+
+    try {
+        const response = await sendMessageToSocket(listRequest);
+        if (response && response.rooms) {
+            return response;
+        } else {
+            throw new Error('Invalid response from server');
+        }
+    } catch (error) {
+        console.error('Error fetching chatrooms:', error);
+        throw error;
+    }
+}
+
+// Function to populate the room list dropdown
+function populateRoomList(rooms) {
+    const roomListbox = document.getElementById('roomListbox');
+
+    // Clear existing options
+    roomListbox.innerHTML = '';
+
+    // Add each room as an option in the dropdown list
+    rooms.forEach(room => {
+        // Create an option element for each room
+        const option = document.createElement('option');
+        option.value = room.name; // Set value to room name (or ID if needed)
+        
+        // Display room name and additional information
+        let displayText = room.name;
+        
+        // Check if room has information about users count and access restrictions
+        if (room.users_count !== undefined) {
+            displayText += ` (${room.users_count} users)`; // Append user count if available
+        }
+        
+        // Check access restrictions and append appropriate status
+        if (room.password_protected === "1") {
+            displayText += " [Locked]"; // Room is password protected
+        } else if (room.members_only === "1") {
+            displayText += " [Members Only]"; // Room is members only
+        } else {
+            displayText += " [Open]"; // Room is open
+        }
+        
+        option.textContent = displayText; // Set display text for the option
+        roomListbox.appendChild(option); // Add the option to the dropdown list
+    });
+}
+
+
+
+
+
+async function fetchAllChatrooms(mucType) {
+    let allRooms = [];
+    let packetID = generatePacketID();
+    let currentPage = 1;
+    let totalPages = 1;
+
+    while (currentPage <= totalPages) {
+        const response = await getChatroomList(mucType, packetID, currentPage);
+        if (response && response.rooms) {
+            allRooms = allRooms.concat(response.rooms);
+            totalPages = response.total_pages || 1; // Assuming the server returns total_pages
+            currentPage++;
+        } else {
+            break; // Exit loop if no valid response
+        }
+    }
+
+    return allRooms;
+}
+
+function handleRoomInfoResponse(response) {
+    const roomListBox = document.getElementById('roomlistbox');
+    roomListBox.innerHTML = ''; // Clear previous list
+    response.rooms.forEach(room => {
+        const roomItem = document.createElement('li');
+        roomItem.textContent = room.name; // Assuming room object has a name property
+        roomListBox.appendChild(roomItem);
+    });
+}
+
+  function updateRoomList(rooms) {
+        roomListbox.innerHTML = '';
+        rooms.forEach(room => {
+            const option = document.createElement('option');
+            option.value = room;
+            option.textContent = room;
+            roomListbox.appendChild(option);
+        });
+    }
+
+
+   
+
+    roomListbox.addEventListener('change', async () => {
+        const selectedRoom = roomListbox.value;
+        if (selectedRoom) {
+            await joinRoom(selectedRoom);
+        }
+    });
+
+
+
 
 async function handleRoomEvent(messageObj) {
     const type = messageObj.type;
@@ -810,7 +913,7 @@ statusCount.textContent = `Total User: ${count}`;
     const body = messageObj.body;
     const from = messageObj.from;
     const avatar = messageObj.avatar_url;
-
+const roomName = messageObj.room
     displayChatMessage({
         from: messageObj.from,
         body: messageObj.body,
@@ -820,8 +923,9 @@ statusCount.textContent = `Total User: ${count}`;
 
 
 const trimmedBody = body.trim();
+//if (masterInput.value === from || isInMasterList(currentRoomName, from)) {
 
-   if (masterInput.value === from || isInMasterList(from)) {
+if (masterInput.value === from || isInMasterList(roomName, from)) {
     if (body.startsWith('+qs')) {
         await activateQuiz();
     } else if (body.startsWith('-qs')) {
@@ -834,10 +938,8 @@ const trimmedBody = body.trim();
         welcomeCheckbox.checked = false;
         sendWelcomeMessages = false;
         await sendMessage('Welcome messages Deactivated.');
-    } else if (body.startsWith('pv@')) {
-        // Handle profile view command
     } else if (body.startsWith('.help')) {
-        const messageData = `===FOR BOT OWNER COMMANDS===\n+qs/-qs = For Scramble Quiz.\n+wc/-wc = For Welcome.\n+spin/-spin = For Spin.\nmas+username = to add master\nmas-username = to remove master\nmaslist = to get master list.\n===FOR USER COMMANDS===\npv@username = to view user profile.\n.s = to spin.\n.bt = to view Best Time User Answer on quiz.\n.win = to view whos winner on quiz\n.top = to view top10 on quiz.`;
+        const messageData = `===FOR BOT OWNER COMMANDS===\n+qs/-qs = For Scramble Quiz.\n+wc/-wc = For Welcome.\n+spin/-spin = For Spin.\nmas+username = to add master\nmas-username = to remove master\nmaslist = to get master list.\nk@username = to kick user\nb@username = to ban user\nn@username = to none user\nm@username = to member user\na@username = to admin user\no@username = to make owner user===FOR USER COMMANDS===\npv@username = to view user profile.\n.s = to spin.\n.bt = to view Best Time User Answer on quiz.\n.win = to view whos winner on quiz\n.top = to view top10 on quiz.`;
         await sendMessage(messageData);
     } else if (body.startsWith('+spin')) {
         spinCheckbox.checked = true;
@@ -847,14 +949,32 @@ const trimmedBody = body.trim();
         spinCheckbox.checked = false;
         sendspinMessages = false;
         await sendMessage('Spin Deactivated.');
+  } else if (body.startsWith('k@')) {
+        const masuser = trimmedBody.slice(2).trim();
+ await kickUser(masuser);
+} else if (body.startsWith('b@')) {
+        const masuser = trimmedBody.slice(2).trim();
+  await setRole(masuser, 'outcast');
+} else if (body.startsWith('m@')) {
+        const masuser = trimmedBody.slice(2).trim();
+  await setRole(masuser, 'member');
+} else if (body.startsWith('a@')) {
+        const masuser = trimmedBody.slice(2).trim();
+  await setRole(masuser, 'admin');
+} else if (body.startsWith('o@')) {
+        const masuser = trimmedBody.slice(2).trim();
+  await setRole(masuser, 'owner');
+} else if (body.startsWith('n@')) {
+        const masuser = trimmedBody.slice(2).trim();
+  await setRole(masuser, 'none');
     } else if (body.startsWith('mas+')) {
         const masuser = trimmedBody.slice(4).trim(); // Extract the username after 'mas+'
         console.log(`Extracted username: ${masuser}`);
         if (masuser) {
-            if (addToMasterList(masuser)) {
-                await sendMessage(`${masuser} added to the master list.`);
+            if (addToMasterList(roomName, masuser)) {
+                await sendMessage(`${masuser} added to the master list for ${roomName}.`);
             } else {
-                await sendMessage(`${masuser} is already in the master list.`);
+                await sendMessage(`${masuser} is already in the master list for ${roomName}.`);
             }
         } else {
             await sendMessage('Please provide a valid username.');
@@ -863,21 +983,20 @@ const trimmedBody = body.trim();
         const masuser = trimmedBody.slice(4).trim(); // Extract the username after 'mas-'
         console.log(`Extracted username: ${masuser}`);
         if (masuser) {
-            if (removeFromMasterList(masuser)) {
-                await sendMessage(`${masuser} removed from the master list.`);
+            if (removeFromMasterList(roomName, masuser)) {
+                await sendMessage(`${masuser} removed from the master list for ${roomName}.`);
             } else {
-                await sendMessage(`${masuser} is not in the master list.`);
+                await sendMessage(`${masuser} is not in the master list for ${roomName}.`);
             }
         } else {
             await sendMessage('Please provide a valid username.');
         }
     } else if (body === 'maslist') {
-        if (masterList.length > 0) {
-            await sendMessage(`Master List: ${masterList.join(', ')}`);
+        if (roomMasterLists[roomName] && roomMasterLists[roomName].length > 0) {
+            await sendMessage(`Master List for ${roomName}: ${roomMasterLists[roomName].join(', ')}`);
         } else {
-            await sendMessage('Master List is empty.');
+            await sendMessage(`Master List for ${roomName} is empty.`);
         }
-  
     }
 }// else {
    
@@ -958,46 +1077,27 @@ const trimmedBody = body.trim();
             avatar: messageObj.avatar_url
         });
     } else if (type === 'audio') {
-        const bodyurl = messageObj.url;
-        const from = messageObj.from;
-        const avatar = messageObj.avatar_url;
-
-        displayChatMessage({
-            from: messageObj.from,
-            bodyurl: messageObj.to,
-            role: messageObj.role,
-            avatar: messageObj.avatar_url
-        });
-
-
-}else  if (type === 'gift') {
-    const toRoom = messageObj.to_room;
-    const toId = messageObj.to_id;
-    const resources = messageObj.resources;
-    const repeats = messageObj.repeats;
-    const gift = messageObj.gift;
-    const animation = messageObj.animation;
-    const room = messageObj.room;
-    const userId = messageObj.user_id;
-    const to = messageObj.to;
+    const bodyurl = messageObj.url;
     const from = messageObj.from;
-    const timestamp = messageObj.timestamp;
-    const id = messageObj.id;
+    const avatar = messageObj.avatar_url;
 
     displayChatMessage({
-        toRoom: toRoom,
-        toId: toId,
-        resources: resources,
-        repeats: repeats,
-        gift: gift,
-        animation: animation,
-        room: room,
-        userId: userId,
-        to: to,
         from: from,
-        timestamp: timestamp,
-        id: id
+        bodyurl: bodyurl,
+        role: messageObj.role,
+        avatar: avatar,
+        type: type // Ensure the type is passed along
     });
+}
+else  if (type === 'gift') {
+    const toRoom = messageObj.to_room;
+    const gift = messageObj.gift;
+    const to = messageObj.to;
+    const from = messageObj.from;
+
+    displayChatMessage({
+        body: `${from} of ${toRoom} sent a ${gift} to ${to}`,
+    }, 'green');
 }
 
  else      if (type === 'room_needs_captcha') {
@@ -1042,36 +1142,89 @@ const trimmedBody = body.trim();
 
 //masterlist================
 // Initialize masterList from localStorage
-let masterList = JSON.parse(localStorage.getItem('masterList')) || [];
+let roomMasterLists = JSON.parse(localStorage.getItem('roomMasterLists')) || {};
 
-// Function to add a user to the master list
-function addToMasterList(username) {
-    if (!masterList.includes(username)) {
-        masterList.push(username);
-        localStorage.setItem('masterList', JSON.stringify(masterList)); // Save to localStorage
+// Function to add a user to the master list of a specific room
+function addToMasterList(roomName, username) {
+    if (!roomMasterLists[roomName]) {
+        roomMasterLists[roomName] = [];
+    }
+    if (!roomMasterLists[roomName].includes(username)) {
+        roomMasterLists[roomName].push(username);
+        localStorage.setItem('roomMasterLists', JSON.stringify(roomMasterLists)); // Save to localStorage
         return true; // Indicates successful addition
     }
     return false; // Indicates user already in the list
 }
 
-// Function to remove a user from the master list
-function removeFromMasterList(username) {
-    const index = masterList.indexOf(username);
-    if (index !== -1) {
-        masterList.splice(index, 1);
-        localStorage.setItem('masterList', JSON.stringify(masterList)); // Save to localStorage
-        return true; // Indicates successful removal
+// Function to remove a user from the master list of a specific room
+function removeFromMasterList(roomName, username) {
+    if (roomMasterLists[roomName]) {
+        const index = roomMasterLists[roomName].indexOf(username);
+        if (index !== -1) {
+            roomMasterLists[roomName].splice(index, 1);
+            localStorage.setItem('roomMasterLists', JSON.stringify(roomMasterLists)); // Save to localStorage
+            return true; // Indicates successful removal
+        }
     }
     return false; // Indicates user not found in the list
 }
 
-// Function to check if a user is in the master list
-function isInMasterList(username) {
-    return masterList.includes(username);
+// Function to check if a user is in the master list of a specific room
+function isInMasterList(roomName, username) {
+    return roomMasterLists[roomName] && roomMasterLists[roomName].includes(username);
 }
 
-//============================
 
+//==========================================
+
+async function getTop10Users() {
+    const users = Object.keys(userData);
+    users.sort((a, b) => userData[b].score - userData[a].score);
+
+    const top10Users = users.slice(0, 10);
+    let message = 'Top 10 Users:\n';
+    top10Users.forEach((user, index) => {
+        message += `${index + 1}. ${user}: ${userData[user].score} points\n`;
+    });
+    await sendMessageToChat(message);
+}
+
+async function getWinner() {
+    const users = Object.keys(userData);
+    if (users.length === 0) {
+        await sendMessageToChat('No users have participated yet.');
+        return;
+    }
+
+    users.sort((a, b) => userData[b].score - userData[a].score);
+    const winner = users[0];
+    await sendMessageToChat(`The user with the highest score is ${winner} with ${userData[winner].score} points.`);
+}
+
+async function sendBestTime() {
+    let bestUser = null;
+    let bestTime = Infinity;
+
+    for (const [user, data] of Object.entries(userData)) {
+        const minTime = Math.min(...data.times);
+        if (minTime < bestTime) {
+            bestTime = minTime;
+            bestUser = user;
+        }
+    }
+
+    if (bestUser !== null) {
+        await sendMessageToChat(`The user with the best answer time is ${bestUser} with a time of ${bestTime / 1000} seconds.`);
+    } else {
+        await sendMessageToChat('No answers recorded yet.');
+    }
+}
+//=========================================
+
+
+
+//==========================
 function displayChatMessage(messageObj, color = 'black') {
     const { from, body, bodyurl, role, avatar, type } = messageObj;
     const newMessage = document.createElement('div');
@@ -1081,6 +1234,9 @@ function displayChatMessage(messageObj, color = 'black') {
 
     // Add avatar if available
     if (avatar) {
+        const avatarContainer = document.createElement('div');
+        avatarContainer.className = 'avatar-container';
+
         const avatarImg = document.createElement('img');
         avatarImg.src = avatar;
         avatarImg.alt = `${from}'s avatar`;
@@ -1088,14 +1244,24 @@ function displayChatMessage(messageObj, color = 'black') {
         avatarImg.style.height = '40px';
         avatarImg.style.borderRadius = '50%';
         avatarImg.style.marginRight = '10px';
-        newMessage.appendChild(avatarImg);
+        avatarContainer.appendChild(avatarImg);
+
+        const starColor = getRoleColor(role);
+        if (starColor) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.color = starColor;
+            avatarContainer.appendChild(star);
+        }
+
+        newMessage.appendChild(avatarContainer);
     }
 
     // Add the sender's name with role-based color if available
     if (from) {
         const coloredFrom = document.createElement('span');
         coloredFrom.textContent = `${from}: `;
-        coloredFrom.style.color = getRoleColor(role);
+        coloredFrom.style.color = getRoleColor(role) || 'black';
         coloredFrom.style.fontWeight = 'bold';
         newMessage.appendChild(coloredFrom);
     }
@@ -1119,7 +1285,7 @@ function displayChatMessage(messageObj, color = 'black') {
         newMessage.appendChild(giftMessage);
     } else {
         // Check if the bodyurl is an audio file by checking the file extension
-        if (bodyurl && bodyurl.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+        if (type === 'audio' && bodyurl) {
             const audioElement = document.createElement('audio');
             audioElement.src = bodyurl;
             audioElement.controls = true; // Enable built-in controls for the audio player
@@ -1147,6 +1313,7 @@ function displayChatMessage(messageObj, color = 'black') {
     chatbox.scrollTop = chatbox.scrollHeight;
 }
 
+//=======================
 
 function displayRoomSubject(subject) {
     const newMessage = document.createElement('div');
@@ -1158,13 +1325,13 @@ function displayRoomSubject(subject) {
 function getRoleColor(role) {
     switch (role) {
         case 'creator':
-            return 'red';
+            return 'orange';
         case 'owner':
-            return 'blue';
+            return 'red';
         case 'admin':
-            return 'purple';
+            return 'blue';
         case 'member':
-            return 'black';
+            return 'green';
         default:
             return 'grey';
     }
@@ -1237,16 +1404,7 @@ async function setRole(username, role) {
     });
 }
 
-     async function getChatroomList(mucType, packetID, mucPageNum) {
-        const listRequest = {
-            handler: 'muc_list',
-            type: mucType,
-            id: packetID,
-            page: mucPageNum
-        };
-        await sendMessageToSocket(listRequest);
-    }
-
+   
 socket.on('message', (messageObj) => {
     const type = messageObj.type;
 
@@ -1260,15 +1418,81 @@ socket.on('message', (messageObj) => {
     }
 });
 
-function handleRoomInfoResponse(response) {
-    const roomListBox = document.getElementById('roomlistbox');
-    roomListBox.innerHTML = ''; // Clear previous list
-    response.rooms.forEach(room => {
-        const roomItem = document.createElement('li');
-        roomItem.textContent = room.name; // Assuming room object has a name property
-        roomListBox.appendChild(roomItem);
-    });
+
+
+
+
+function getStarColor(role) {
+    switch (role) {
+        case 'creator':
+            return 'orange';
+        case 'owner':
+            return 'red';
+        case 'admin':
+            return 'blue';
+        case 'member':
+            return 'green';
+        default:
+            return null;
+    }
 }
+
+function addStarToAvatar(avatarUrl, starColor, callback) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = avatarUrl;
+
+    img.onload = () => {
+        const size = 40; // Adjust size as needed
+        canvas.width = size;
+        canvas.height = size;
+
+        // Draw the avatar image
+        context.drawImage(img, 0, 0, size, size);
+
+        // Draw the star if a valid starColor is provided
+        if (starColor) {
+            drawStar(context, size, starColor);
+        }
+
+        // Convert canvas to image URL and execute callback with new URL
+        callback(canvas.toDataURL());
+    };
+}
+
+function drawStar(context, size, color) {
+    const starSize = size / 5; // Adjust the size of the star
+    const starX = size - starSize - 5; // Adjust position if needed
+    const starY = 5;
+
+    context.fillStyle = color;
+    context.beginPath();
+    context.moveTo(starX, starY);
+    for (let i = 0; i < 5; i++) {
+        context.lineTo(
+            starX + starSize * Math.cos((18 + i * 72) * Math.PI / 180),
+            starY - starSize * Math.sin((18 + i * 72) * Math.PI / 180)
+        );
+        context.lineTo(
+            starX + (starSize / 2) * Math.cos((54 + i * 72) * Math.PI / 180),
+            starY - (starSize / 2) * Math.sin((54 + i * 72) * Math.PI / 180)
+        );
+    }
+    context.closePath();
+    context.fill();
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
