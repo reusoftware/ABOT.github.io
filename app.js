@@ -828,7 +828,7 @@ async function handleRoomEvent(messageObj) {
   
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-       await chat('syntax-error',`Join the  ${roomName }`);
+       await chat( ${powner},`Join the  ${roomName }`);
   joinlog.textContent = `You Join the  ${roomName }`;
         // Display room subject with proper HTML rendering
         displayRoomSubject(`Room subject: ${messageObj.subject} (by ${messageObj.subject_author})`);
