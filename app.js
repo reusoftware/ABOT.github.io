@@ -1381,8 +1381,7 @@ function displayChatMessage(messageObj, color = 'black') {
             audioElement.controls = true; // Enable built-in controls for the audio player
             newMessage.appendChild(audioElement);
         } 
-        // If the bodyurl is an image URL
-        else if (bodyurl && bodyurl.match(/\.(jpeg|jpg|gif|png)$/i)) {
+       else if (type === 'image' && bodyurl) {
             const imageElement = document.createElement('img');
             imageElement.src = bodyurl;
             imageElement.style.maxWidth = '140px'; // Set maximum width for the image
