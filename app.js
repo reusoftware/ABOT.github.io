@@ -937,9 +937,9 @@ statusCount.textContent = `Total User: ${count}`;
         displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
             
   
-       if (userName === 'prateek') {
-            await setRole(userName, 'outcast');
-        }
+      // if (userName === 'prateek') {
+      //      await setRole(userName, 'outcast');
+     //   }
 
         if (sendWelcomeMessages) {
             const welcomeMessages = [
