@@ -1383,7 +1383,8 @@ function displayChatMessage(messageObj, color = 'black') {
             audioElement.controls = true; // Enable built-in controls for the audio player
             newMessage.appendChild(audioElement);
         } 
-       else if (type === 'image' && url) {
+      // else if (type === 'image' && url) {
+           else if (type === 'image') {
             console.log('Image message detected with URL:', url); // Debugging statement
             const imageElement = document.createElement('img');
             imageElement.src = url;
