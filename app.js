@@ -1385,7 +1385,7 @@ function displayChatMessage(messageObj, color = 'black') {
             console.log('Image message detected with URL:', url); // Debugging statement
             const imageElement = document.createElement('img');
             imageElement.src = url;
-            imageElement.style.maxWidth = '140px'; // Set maximum width for the image
+            imageElement.style.maxWidth = '100px'; // Set maximum width for the image
             newMessage.appendChild(imageElement);
         } else {
             console.log('Regular text message detected:', body); // Debugging statement
