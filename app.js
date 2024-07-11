@@ -1314,9 +1314,8 @@ async function sendBestTime() {
 
 
 
-//==========================
 function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, bodyurl, role, avatar, type } = messageObj;
+    const { from, body, url, role, avatar, type } = messageObj;
     const newMessage = document.createElement('div');
     newMessage.style.display = 'flex';
     newMessage.style.alignItems = 'center';
@@ -1374,16 +1373,16 @@ function displayChatMessage(messageObj, color = 'black') {
         giftMessage.style.color = color;
         newMessage.appendChild(giftMessage);
     } else {
-        // Check if the bodyurl is an audio file by checking the file extension
-        if (type === 'audio' && bodyurl) {
+        // Check if the url is an audio file by checking the file extension
+        if (type === 'audio' && url) {
             const audioElement = document.createElement('audio');
-            audioElement.src = bodyurl;
+            audioElement.src = url;
             audioElement.controls = true; // Enable built-in controls for the audio player
             newMessage.appendChild(audioElement);
         } 
-       else if (type === 'image' && bodyurl) {
+       else if (type === 'image' && url) {
             const imageElement = document.createElement('img');
-            imageElement.src = bodyurl;
+            imageElement.src = url;
             imageElement.style.maxWidth = '140px'; // Set maximum width for the image
             newMessage.appendChild(imageElement);
         } 
@@ -1402,7 +1401,6 @@ function displayChatMessage(messageObj, color = 'black') {
     chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-//=======================
 
 function displayRoomSubject(subject) {
     const newMessage = document.createElement('div');
