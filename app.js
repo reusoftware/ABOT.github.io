@@ -1316,6 +1316,8 @@ async function sendBestTime() {
 
 function displayChatMessage(messageObj, color = 'black') {
     const { from, body, url, role, avatar, type } = messageObj;
+    console.log('Received message object:', messageObj); // Debugging statement
+
     const newMessage = document.createElement('div');
     newMessage.style.display = 'flex';
     newMessage.style.alignItems = 'center';
@@ -1375,12 +1377,14 @@ function displayChatMessage(messageObj, color = 'black') {
     } else {
         // Check if the url is an audio file by checking the file extension
         if (type === 'audio' && url) {
+            console.log('Audio message detected with URL:', url); // Debugging statement
             const audioElement = document.createElement('audio');
             audioElement.src = url;
             audioElement.controls = true; // Enable built-in controls for the audio player
             newMessage.appendChild(audioElement);
         } 
        else if (type === 'image' && url) {
+            console.log('Image message detected with URL:', url); // Debugging statement
             const imageElement = document.createElement('img');
             imageElement.src = url;
             imageElement.style.maxWidth = '140px'; // Set maximum width for the image
@@ -1388,6 +1392,7 @@ function displayChatMessage(messageObj, color = 'black') {
         } 
         // For regular text messages
         else {
+            console.log('Regular text message detected:', body); // Debugging statement
             const messageBody = document.createElement('span');
             messageBody.textContent = body;
             messageBody.style.color = color;
