@@ -937,9 +937,9 @@ statusCount.textContent = `Total User: ${count}`;
         displayChatMessage({ from: userName, body: `joined the room as ${role}`, role }, 'green');
             
   
-      // if (userName === 'prateek') {
-      //      await setRole(userName, 'outcast');
-     //   }
+       if (userName === 'prateek') {
+            await setRole(userName, 'outcast');
+        }
 
         if (sendWelcomeMessages) {
             const welcomeMessages = [
@@ -1313,10 +1313,10 @@ async function sendBestTime() {
 //=========================================
 
 
-function displayChatMessage(messageObj, color = 'black') {
-    const { from, body, url, role, avatar_url: avatar, type } = messageObj;
-    console.log('Received message object:', messageObj); // Debugging statement
 
+//==========================
+function displayChatMessage(messageObj, color = 'black') {
+    const { from, body, bodyurl, role, avatar, type } = messageObj;
     const newMessage = document.createElement('div');
     newMessage.style.display = 'flex';
     newMessage.style.alignItems = 'center';
@@ -1374,21 +1374,22 @@ function displayChatMessage(messageObj, color = 'black') {
         giftMessage.style.color = color;
         newMessage.appendChild(giftMessage);
     } else {
-        // Check if the url is an audio file by checking the file extension
-        if (type === 'audio' && url) {
-            console.log('Audio message detected with URL:', url); // Debugging statement
+        // Check if the bodyurl is an audio file by checking the file extension
+        if (type === 'audio' && bodyurl) {
             const audioElement = document.createElement('audio');
-            audioElement.src = url;
+            audioElement.src = bodyurl;
             audioElement.controls = true; // Enable built-in controls for the audio player
             newMessage.appendChild(audioElement);
-        } else if (type === 'image' && url) {
-            console.log('Image message detected with URL:', url); // Debugging statement
+        } 
+        // If the bodyurl is an image URL
+        else if (bodyurl && bodyurl.match(/\.(jpeg|jpg|gif|png)$/i)) {
             const imageElement = document.createElement('img');
-            imageElement.src = url;
-            imageElement.style.maxWidth = '100px'; // Set maximum width for the image
+            imageElement.src = bodyurl;
+            imageElement.style.maxWidth = '140px'; // Set maximum width for the image
             newMessage.appendChild(imageElement);
-        } else {
-            console.log('Regular text message detected:', body); // Debugging statement
+        } 
+        // For regular text messages
+        else {
             const messageBody = document.createElement('span');
             messageBody.textContent = body;
             messageBody.style.color = color;
@@ -1402,7 +1403,7 @@ function displayChatMessage(messageObj, color = 'black') {
     chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-
+//=======================
 
 function displayRoomSubject(subject) {
     const newMessage = document.createElement('div');
@@ -1553,13 +1554,13 @@ function addStarToAvatar(avatarUrl, starColor, callback) {
 
 function drawStar(context, size, color) {
     const starSize = size / 5; // Adjust the size of the star
-    const starX = size - starSize - 5; // Adjust position if needed
-    const starY = 5;
+    const starX = size - starSize - 10; // Adjust position if needed
+    const starY = 10;
 
     context.fillStyle = color;
     context.beginPath();
     context.moveTo(starX, starY);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
         context.lineTo(
             starX + starSize * Math.cos((18 + i * 72) * Math.PI / 180),
             starY - starSize * Math.sin((18 + i * 72) * Math.PI / 180)
