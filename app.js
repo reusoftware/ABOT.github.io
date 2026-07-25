@@ -395,7 +395,7 @@ spinCheckbox.addEventListener('change', () => {
 
    async function connectWebSocket(username, password) {
         statusDiv.textContent = 'Connecting to server...';
-        socket = new WebSocket('wss://chatp.net:5333/server');
+        socket = new WebSocket('wss://chatp.net:433/server');
 
         socket.onopen = async () => {
             isConnected = true;
