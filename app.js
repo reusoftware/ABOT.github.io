@@ -395,7 +395,7 @@ spinCheckbox.addEventListener('change', () => {
 
    async function connectWebSocket(username, password) {
         statusDiv.textContent = 'Connecting to server...';
-        socket = new WebSocket('wss://chatp.net:433/server');
+        socket = new WebSocket('wss://chatp.net:5222/server');
 
         socket.onopen = async () => {
             isConnected = true;
@@ -459,7 +459,7 @@ function reconnect() {
     if (socket.readyState !== WebSocket.OPEN && !reconnectInterval) {
         reconnectInterval = setInterval(() => {
             if (socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
-                socket = new WebSocket('wss://chatp.net:5333/server');
+                socket = new WebSocket('wss://chatp.net:5222/server');
                 socket.onopen = () => {
                     clearInterval(reconnectInterval);
                     reconnectInterval = null;
